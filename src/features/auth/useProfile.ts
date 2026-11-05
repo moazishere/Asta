@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { useAuth } from './AuthProvider';
 import type { Profile } from './types';
-import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api';
 
 export const profileKey = (userId: string | undefined) => ['profile', userId] as const;
 
@@ -12,14 +12,6 @@ export function useProfile() {
   return useQuery({
     queryKey: profileKey(userId),
     enabled: !!userId,
-    queryFn: async (): Promise<Profile> => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId!)
-        .single();
-      if (error) throw error;
-      return data as Profile;
-    },
+    queryFn: () => apiFetch<Profile>('/me/profile'),
   });
 }

@@ -11,6 +11,22 @@ How to use: run the phases in order, one per Claude Code session (or `/clear` be
 - **Git:** this folder has its own git repo (`git init` in Asta). Do not commit into the repo that lives in the home folder.
 - **Security principle:** clients never write `challenge_scores`. Only security-definer triggers/functions do.
 
+## Backend: Express (supersedes every Supabase mention below)
+
+Phase 0 and 1 were built first on Supabase, then the backend was switched to **Express + TypeScript in `server/`**, with Postgres hosted on Supabase as a plain database, our own JWT auth, deployed on Render. Phases 0-1 below are kept as written for history; read later phases with this mapping:
+
+| Prompt says | Now means |
+| --- | --- |
+| Supabase client / `supabase-js` | `apiFetch` / `apiPublic` in `src/lib/api.ts` calling the Express API |
+| RLS policies, `auth.uid()` | Same RLS, but keyed to `app.uid()` and the `app_user` role; the API runs each request via `db.asUser(userId, ...)` |
+| Supabase Auth, Google sign-in | `/auth/*` routes in `server/` (bcrypt, rotating refresh tokens, server-side Google redirect) |
+| Supabase Realtime (leaderboard, friend-request badge) | Server-Sent Events (or WebSocket) endpoint in Express; the app subscribes while the screen is open |
+| Edge Functions (push, scheduled challenge status) | Express code plus an in-process scheduler (`node-cron`) or Render cron job, using `expo-server-sdk` for push |
+| `supabase/migrations/` | `server/migrations/` (run with `npm run migrate`) |
+| "SQL tests / RLS tests" | `server/test/` (PGlite in-process Postgres + supertest) |
+
+Rules for every API endpoint: validate the body with zod, use `db.asUser` for user data (never `asService`), return JSON errors `{ error, message }`, add a supertest test, and never return internal errors. Run uploads (Phase 2) go to `POST /runs` with a larger body limit set on that route only, in one transaction.
+
 ---
 
 ## Phase 0: Project setup and CLAUDE.md

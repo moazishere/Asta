@@ -37,10 +37,12 @@ export const en = {
   'auth.or': 'or',
   'auth.noAccount': "Don't have an account? Sign up",
   'auth.haveAccount': 'Already have an account? Sign in',
-  'auth.checkEmail': 'Check your inbox to confirm your email, then sign in.',
   'auth.errorEmail': 'Enter a valid email address.',
   'auth.errorPassword': 'Use at least 8 characters.',
   'auth.errorGoogle': 'Google sign-in was cancelled or failed.',
+  'auth.errorInvalid': 'Wrong email or password.',
+  'auth.errorEmailTaken': 'That email is already registered. Try signing in.',
+  'auth.errorNetwork': 'Could not reach the server. Check your connection and try again.',
 
   'onboarding.title': 'Let’s set you up',
   'onboarding.subtitle': 'We use this to estimate calories. You can change it later.',

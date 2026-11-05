@@ -61,6 +61,7 @@ const config: ExpoConfig = {
         isIosBackgroundLocationEnabled: true,
       },
     ],
+    'expo-secure-store',
     'expo-sqlite',
     'expo-notifications',
   ],

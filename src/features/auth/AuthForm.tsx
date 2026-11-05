@@ -18,7 +18,6 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const [busy, setBusy] = useState<'password' | 'google' | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
 
   const emailError = submitted && !EMAIL_RE.test(email.trim()) ? t('auth.errorEmail') : undefined;
   const passwordError = submitted && password.length < 8 ? t('auth.errorPassword') : undefined;
@@ -26,7 +25,6 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   async function onSubmit() {
     setSubmitted(true);
     setError(null);
-    setNotice(null);
     if (!EMAIL_RE.test(email.trim()) || password.length < 8) return;
 
     setBusy('password');
@@ -34,7 +32,6 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     if (isSignUp) {
       const res = await signUp(cleanEmail, password);
       if (res.error) setError(res.error);
-      else if (res.needsConfirmation) setNotice(t('auth.checkEmail'));
     } else {
       const res = await signIn(cleanEmail, password);
       if (res.error) setError(res.error);
@@ -81,11 +78,6 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
         {error ? (
           <Text variant="caption" color="danger" accessibilityLiveRegion="polite">
             {error}
-          </Text>
-        ) : null}
-        {notice ? (
-          <Text variant="caption" color="accent" accessibilityLiveRegion="polite">
-            {notice}
           </Text>
         ) : null}
 

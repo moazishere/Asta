@@ -1,4 +1,6 @@
 -- Core schema. Row Level Security lives in 0002_rls.sql so each concern stays reviewable on its own.
+-- The Express API is the only client of this database. It uses Postgres as a plain database
+-- (hosted on Supabase, but none of Supabase's own auth/API features are used).
 
 -- Shared trigger: keep updated_at honest without trusting the client.
 create function public.set_updated_at() returns trigger
@@ -10,10 +12,45 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
--- profiles: one row per auth user. Created by the signup trigger below, completed by onboarding.
+-- Authentication tables. Only the API's service connection can touch these (no grants to app_user).
+-- ---------------------------------------------------------------------------
+create table public.users (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  -- Null for accounts that only ever signed in with Google.
+  password_hash text,
+  google_sub text unique,
+  created_at timestamptz not null default now(),
+  check (email = lower(email)),
+  check (password_hash is not null or google_sub is not null)
+);
+create unique index users_email_key on public.users (email);
+
+-- Refresh tokens are random secrets; only their SHA-256 hash is stored, so a database leak does not
+-- hand out usable sessions. Each use rotates the token (old one revoked, new one issued).
+create table public.refresh_tokens (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users (id) on delete cascade,
+  token_hash text not null unique,
+  expires_at timestamptz not null,
+  revoked_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index refresh_tokens_user_idx on public.refresh_tokens (user_id);
+
+-- One-time codes that hand a finished Google sign-in from the server's browser redirect to the app.
+create table public.auth_codes (
+  code_hash text primary key,
+  user_id uuid not null references public.users (id) on delete cascade,
+  expires_at timestamptz not null,
+  used_at timestamptz
+);
+
+-- ---------------------------------------------------------------------------
+-- profiles: one row per user. Created by the trigger below, completed by onboarding.
 -- ---------------------------------------------------------------------------
 create table public.profiles (
-  id uuid primary key references auth.users (id) on delete cascade,
+  id uuid primary key references public.users (id) on delete cascade,
   username text not null unique
     check (username = lower(username) and username ~ '^[a-z0-9_]{3,20}$'),
   display_name text,
@@ -32,8 +69,8 @@ create table public.profiles (
 create trigger profiles_updated_at before update on public.profiles
   for each row execute function public.set_updated_at();
 
--- A profile row appears the moment someone signs up. The username is a temporary placeholder that
--- onboarding replaces. search_path is pinned because this function is security definer.
+-- A profile row appears the moment a user row is created. The username is a temporary placeholder
+-- that onboarding replaces. search_path is pinned because this function is security definer.
 create function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = '' as $$
 begin
@@ -41,12 +78,12 @@ begin
   values (
     new.id,
     'user_' || substr(replace(new.id::text, '-', ''), 1, 8),
-    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name')
+    null
   );
   return new;
 end;
 $$;
-create trigger on_auth_user_created after insert on auth.users
+create trigger on_user_created after insert on public.users
   for each row execute function public.handle_new_user();
 
 -- ---------------------------------------------------------------------------

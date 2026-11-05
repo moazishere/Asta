@@ -31,7 +31,7 @@ export default function RootLayout() {
 // Route protection: exactly one of the three groups below is reachable at any time, and expo-router
 // redirects automatically when the guard flips (e.g. sign-out, or onboarding finishing).
 function RootNavigator() {
-  const { session, loading } = useAuth();
+  const { session, loading, offline, retry } = useAuth();
   const profile = useProfile();
 
   const ready = !loading && (!session || !profile.isPending);
@@ -41,6 +41,18 @@ function RootNavigator() {
   }, [ready]);
 
   if (!ready) return null;
+
+  // Startup could not reach the API, so we cannot tell whether the stored login is still valid.
+  if (offline) {
+    return (
+      <Screen scroll={false}>
+        <View style={styles.error}>
+          <Text variant="h2">{t('auth.errorNetwork')}</Text>
+          <Button label={t('common.retry')} onPress={retry} />
+        </View>
+      </Screen>
+    );
+  }
 
   if (session && profile.isError) {
     return (

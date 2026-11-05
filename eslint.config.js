@@ -7,6 +7,6 @@ module.exports = defineConfig([
   expoConfig,
   prettierConfig, // must be last: turns off stylistic rules that conflict with Prettier
   {
-    ignores: ['dist/*'],
+    ignores: ['dist/*', 'server/**'],
   },
 ]);

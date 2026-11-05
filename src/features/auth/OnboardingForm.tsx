@@ -7,8 +7,8 @@ import { suggestDailyKcal } from './calories';
 import type { Sex } from './types';
 import { profileKey } from './useProfile';
 import { Button, Card, Input, Screen, SegmentedControl, Text } from '@/components';
+import { ApiError, apiFetch } from '@/lib/api';
 import { t } from '@/lib/i18n';
-import { supabase } from '@/lib/supabase';
 import { spacing } from '@/theme';
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
@@ -71,28 +71,36 @@ export function OnboardingForm() {
     if (Object.values(errors).some(Boolean) || !session) return;
 
     setBusy(true);
-    const { error: dbError } = await supabase
-      .from('profiles')
-      .update({
-        username,
-        display_name: displayName.trim() || username,
-        height_cm: h,
-        weight_kg: w,
-        birth_year: by,
-        sex,
-        daily_kcal_goal: Math.round(goal),
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-        onboarded_at: new Date().toISOString(),
-      })
-      .eq('id', session.user.id);
-    setBusy(false);
-
-    if (dbError) {
-      // 23505 = unique_violation on profiles.username.
-      if (dbError.code === '23505') setUsernameTaken(true);
-      else setError(dbError.message);
+    try {
+      await apiFetch('/me/profile', {
+        method: 'PATCH',
+        body: {
+          username,
+          display_name: displayName.trim() || username,
+          height_cm: h,
+          weight_kg: w,
+          birth_year: by,
+          sex,
+          daily_kcal_goal: Math.round(goal),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+          complete_onboarding: true,
+        },
+      });
+    } catch (err) {
+      setBusy(false);
+      if (err instanceof ApiError && err.code === 'username_taken') setUsernameTaken(true);
+      else
+        setError(
+          t(
+            err instanceof ApiError && err.code === 'network_error'
+              ? 'auth.errorNetwork'
+              : 'common.genericError',
+          ),
+        );
       return;
     }
+    setBusy(false);
+
     // The root layout re-routes to the tabs once the refreshed profile says onboarded_at is set.
     await queryClient.invalidateQueries({ queryKey: profileKey(session.user.id) });
   }
