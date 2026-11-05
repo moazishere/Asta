@@ -23,6 +23,9 @@ export const colors = {
   danger: '#FF5C5C',
   success: '#5CE08A',
   overlay: 'rgba(0, 0, 0, 0.6)',
+  // Fade from clear to near-black (the bg colour), used to keep text readable on top of photos.
+  scrimClear: 'rgba(13, 13, 15, 0)',
+  scrimDark: 'rgba(13, 13, 15, 0.94)',
 } as const;
 
 export type ColorToken = keyof typeof colors;

@@ -9,9 +9,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Button, Screen, Text } from '@/components';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/auth/useProfile';
+import { RunBootstrap } from '@/features/run/RunBootstrap';
 import { t } from '@/lib/i18n';
 import { queryClient } from '@/lib/queryClient';
 import { colors, spacing } from '@/theme';
+
+// Registers the background location task. Must be imported at startup so the OS can run it even
+// when no screen exists (the app was woken in the background).
+import '@/features/run/locationTask';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -69,21 +74,25 @@ function RootNavigator() {
   const needsOnboarding = signedIn && !profile.data?.onboarded_at;
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-      <Stack.Protected guard={!signedIn}>
-        <Stack.Screen name="(auth)" />
-      </Stack.Protected>
-      <Stack.Protected guard={needsOnboarding}>
-        <Stack.Screen name="onboarding" />
-      </Stack.Protected>
-      <Stack.Protected guard={signedIn && !needsOnboarding}>
-        <Stack.Screen name="(tabs)" />
-      </Stack.Protected>
-      {/* Dev-only component gallery: not reachable in release builds. */}
-      <Stack.Protected guard={__DEV__ && signedIn && !needsOnboarding}>
-        <Stack.Screen name="dev/gallery" options={{ presentation: 'modal' }} />
-      </Stack.Protected>
-    </Stack>
+    <>
+      {signedIn && !needsOnboarding ? <RunBootstrap /> : null}
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+        <Stack.Protected guard={!signedIn}>
+          <Stack.Screen name="(auth)" />
+        </Stack.Protected>
+        <Stack.Protected guard={needsOnboarding}>
+          <Stack.Screen name="onboarding" />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !needsOnboarding}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="run-summary" options={{ presentation: 'modal' }} />
+        </Stack.Protected>
+        {/* Dev-only component gallery: not reachable in release builds. */}
+        <Stack.Protected guard={__DEV__ && signedIn && !needsOnboarding}>
+          <Stack.Screen name="dev/gallery" options={{ presentation: 'modal' }} />
+        </Stack.Protected>
+      </Stack>
+    </>
   );
 }
 

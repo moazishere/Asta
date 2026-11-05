@@ -23,10 +23,11 @@ Cross-platform (Android + iOS) running app: GPS run tracking, calorie/food loggi
 2. All colors, spacing, radii and typography come from `src/theme`. No hard-coded values in components.
 3. **Server data access:** every query on user data goes through `db.asUser(userId, ...)`, which runs as the `app_user` role with Row Level Security bound to the caller. `db.asService(...)` (owner role, bypasses RLS) is only for the auth tables (`users`, `refresh_tokens`, `auth_codes`). Never build SQL from request input except whitelisted column names.
 4. Clients never write `challenge_scores`; only security-definer SQL does. `food_logs` and `run_points` are owner-only. Friends only ever see `route_polyline_public` (via the `friend_runs` view).
-5. Validate every request body with zod; routes never return password hashes, token hashes or internal errors.
-6. Expo APIs change between SDKs: use `npx expo install <pkg>` (never `npm add`) in the app, and check https://docs.expo.dev/versions/v58.0.0/ before using an API from memory.
-7. Never commit secrets. App public config goes in `.env.local`, server config in `server/.env` (see the `.env.example` files).
-8. Run lint and typecheck (app and server) and the server tests before declaring a task done.
+5. **Run data:** the phone stores every GPS fix in local SQLite first and uploads raw points; the server re-derives distance, routes and calories. The filter constants and logic in `src/features/run/geo.ts` and `server/src/lib/geo.ts` must stay in sync (both are unit tested). Background tracking (`locationTask.ts`) may only touch the database, never React state.
+6. Validate every request body with zod; routes never return password hashes, token hashes or internal errors.
+7. Expo APIs change between SDKs: use `npx expo install <pkg>` (never `npm add`) in the app, and check https://docs.expo.dev/versions/v58.0.0/ before using an API from memory.
+8. Never commit secrets. App public config goes in `.env.local`, server config in `server/.env` (see the `.env.example` files).
+9. Run lint and typecheck (app and server) and the server tests before declaring a task done.
 
 ## Commands
 
@@ -36,6 +37,7 @@ npm install
 npx expo start --dev-client      # dev server for the development build
 npx expo lint                    # lint
 npx tsc --noEmit                 # typecheck
+npm test                         # app unit tests (run maths)
 npx expo-doctor                  # diagnose config/dependency problems
 npx eas-cli@latest build --profile development --platform android   # Android dev build (cloud)
 

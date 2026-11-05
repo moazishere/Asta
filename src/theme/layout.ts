@@ -32,4 +32,5 @@ export const sizes = {
   avatarMd: 44,
   avatarLg: 72,
   roundButton: 48,
+  mapMinHeight: 220,
 } as const;

@@ -25,7 +25,7 @@ Phase 0 and 1 were built first on Supabase, then the backend was switched to **E
 | `supabase/migrations/` | `server/migrations/` (run with `npm run migrate`) |
 | "SQL tests / RLS tests" | `server/test/` (PGlite in-process Postgres + supertest) |
 
-Rules for every API endpoint: validate the body with zod, use `db.asUser` for user data (never `asService`), return JSON errors `{ error, message }`, add a supertest test, and never return internal errors. Run uploads (Phase 2) go to `POST /runs` with a larger body limit set on that route only, in one transaction.
+Rules for every API endpoint: validate the body with zod, use `db.asUser` for user data (never `asService`), return JSON errors `{ error, message }`, add a supertest test, and never return internal errors. Run uploads (Phase 2) go to `POST /runs` with a larger body limit set on that route only, in one transaction. **Phase 2 as built:** the phone uploads only the raw accepted GPS points (plus a client-generated run id, start/end and moving time). The server re-derives distance, pace, calories, the simplified route and the 200 m-trimmed public route itself (it never trusts client-computed values), so item 7's Douglas-Peucker/polyline/kcal/suspicious work lives in `server/src/lib/geo.ts` and `server/src/routes/runs.ts`. In Expo Go tracking is foreground-only (no background location), so Phase 2's background acceptance test needs a development build.
 
 ---
 
