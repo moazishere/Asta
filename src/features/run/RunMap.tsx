@@ -53,6 +53,9 @@ function RunMapBase({ route, follow = false, fitRoute = false, center }: Props) 
       toolbarEnabled={false}
       pitchEnabled={false}
       rotateEnabled={false}
+      // A read-only route preview sits inside a scrolling screen: let swipes scroll the page, not pan the map.
+      scrollEnabled={!fitRoute}
+      zoomEnabled={!fitRoute}
       // Android (Google Maps) uses the custom style; iOS (Apple Maps) uses the dark appearance.
       customMapStyle={darkMapStyle}
       userInterfaceStyle="dark"

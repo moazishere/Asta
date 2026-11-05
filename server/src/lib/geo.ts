@@ -57,6 +57,26 @@ export function pathDistanceM(points: GeoPoint[]): number {
   return total;
 }
 
+/** Between two fixes slower than this the runner is standing still: that time is not "moving time". */
+export const MIN_MOVING_SPEED_MPS = 0.5;
+
+/**
+ * Time spent actually moving, in milliseconds: the sum of the gaps between consecutive fixes of the
+ * same segment whose speed is at least MIN_MOVING_SPEED_MPS. Pauses (segment changes) are excluded.
+ * Splits use the same rule, so split times always add up to this number.
+ */
+export function movingTimeMs(points: GeoPoint[]): number {
+  let total = 0;
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1]!;
+    const b = points[i]!;
+    if (a.segment !== b.segment) continue;
+    const dt = b.t - a.t;
+    if (dt > 0 && haversineM(a, b) / (dt / 1000) >= MIN_MOVING_SPEED_MPS) total += dt;
+  }
+  return total;
+}
+
 /** Distance in metres from point p to the segment a-b, on a local flat approximation (fine at run scale). */
 function distanceToSegmentM(p: GeoPoint, a: GeoPoint, b: GeoPoint): number {
   const mPerDegLat = 111_320;

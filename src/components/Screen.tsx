@@ -16,7 +16,12 @@ export function Screen({ children, scroll = true, withTabBar = false }: Props) {
   const insets = useSafeAreaInsets();
   const padding = {
     paddingTop: insets.top + spacing.lg,
-    paddingBottom: insets.bottom + spacing.xl + (withTabBar ? sizes.tabBarHeight + spacing.xl : 0),
+    // Only Android has our floating custom bar that overlaps content and needs reserved space; on iOS the
+    // system tab bar sits in its own area.
+    paddingBottom:
+      insets.bottom +
+      spacing.xl +
+      (withTabBar && Platform.OS !== 'ios' ? sizes.tabBarHeight + spacing.xl : 0),
     paddingHorizontal: sizes.gutter,
   };
 

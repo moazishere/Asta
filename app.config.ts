@@ -10,7 +10,8 @@ const config: ExpoConfig = {
   orientation: 'portrait',
   icon: './assets/images/icon.png',
   scheme: 'asta',
-  userInterfaceStyle: 'automatic',
+  // The app is dark-only. 'dark' also makes system UI (native tab bar, alerts, keyboard) follow suit.
+  userInterfaceStyle: 'dark',
   ios: {
     bundleIdentifier: BUNDLE_ID,
     icon: './assets/expo.icon',

@@ -1,5 +1,6 @@
 import { getAcceptedPoints, getPendingUploads, markUploaded, markUploadFailed } from './localDb';
 import { ApiError, apiFetch } from '@/lib/api';
+import { invalidateRunData } from '@/lib/queryClient';
 
 type ServerRun = {
   id: string;
@@ -52,5 +53,7 @@ export async function syncPendingRuns(): Promise<number> {
   } finally {
     running = false;
   }
+  // New runs on the server: the history list and weekly totals are now out of date.
+  if (uploaded > 0) invalidateRunData();
   return uploaded;
 }

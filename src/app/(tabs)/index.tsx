@@ -4,6 +4,9 @@ import { StyleSheet, View } from 'react-native';
 import {
   Avatar,
   Card,
+  ErrorView,
+  Icon,
+  LoadingView,
   ProgressRing,
   Screen,
   SectionHeader,
@@ -12,10 +15,15 @@ import {
   Text,
 } from '@/components';
 import { useProfile } from '@/features/auth/useProfile';
+import { useRecentRuns, useWeeklyStats } from '@/features/history/hooks';
+import { historyHref, runHref } from '@/features/history/routes';
+import { RunListItem } from '@/features/history/RunListItem';
+import { percentChange } from '@/features/history/stats';
+import { WeekChart } from '@/features/history/WeekChart';
+import { formatDuration, formatKm, formatPace, paceSecPerKm } from '@/features/run/geo';
 import { t } from '@/lib/i18n';
 import { spacing } from '@/theme';
 
-// Placeholder: layout is final, numbers are zero until runs and food logs exist (phases 2-4).
 export default function Home() {
   const router = useRouter();
   const { data: profile } = useProfile();
@@ -31,16 +39,14 @@ export default function Home() {
         </View>
 
         <SectionHeader title={t('home.thisWeek')} />
-        <StatRow
-          stats={[
-            { label: t('home.distance'), value: '0.0', unit: t('units.km') },
-            { label: t('home.runs'), value: '0' },
-            { label: t('home.time'), value: '00:00' },
-          ]}
+        <WeeklySummary />
+
+        <SectionHeader
+          title={t('home.recent')}
+          actionLabel={t('home.seeAll')}
+          onAction={() => router.push(historyHref)}
         />
-        <Card>
-          <Text color="textMuted">{t('home.noRunsYet')}</Text>
-        </Card>
+        <RecentRuns timeZone={profile?.timezone} onOpen={(id) => router.push(runHref(id))} />
 
         <Card style={styles.kcal}>
           <ProgressRing progress={0} size={96} strokeWidth={10}>
@@ -60,9 +66,116 @@ export default function Home() {
   );
 }
 
+function WeeklySummary() {
+  const query = useWeeklyStats();
+
+  if (query.isPending)
+    return (
+      <Card>
+        <LoadingView />
+      </Card>
+    );
+  if (query.isError) {
+    return (
+      <Card>
+        <ErrorView message={t('home.weekError')} onRetry={() => void query.refetch()} />
+      </Card>
+    );
+  }
+
+  const { thisWeek, lastWeek, days, today } = query.data;
+  const change = percentChange(thisWeek.distance_m, lastWeek.distance_m);
+  const avgPace = paceSecPerKm(thisWeek.distance_m, thisWeek.moving_time_s * 1000);
+
+  // Compared with the whole previous week. Hidden entirely when both weeks are empty.
+  let comparison: {
+    icon: 'trending-up' | 'trending-down' | 'remove';
+    text: string;
+    up: boolean;
+  } | null = null;
+  if (lastWeek.distance_m <= 0) {
+    if (thisWeek.distance_m > 0)
+      comparison = { icon: 'remove', text: t('home.noRunsLastWeek'), up: false };
+  } else if (change !== null) {
+    comparison =
+      change > 0
+        ? { icon: 'trending-up', text: t('home.changeUp', { pct: change }), up: true }
+        : change < 0
+          ? {
+              icon: 'trending-down',
+              text: t('home.changeDown', { pct: Math.abs(change) }),
+              up: false,
+            }
+          : { icon: 'remove', text: t('home.changeSame'), up: false };
+  }
+
+  return (
+    <View style={styles.stack}>
+      <Card style={styles.weekCard}>
+        <Text variant="label" color="textMuted">
+          {t('home.distance')}
+        </Text>
+        <View style={styles.distanceRow}>
+          <Text variant="numeralLg">{formatKm(thisWeek.distance_m)}</Text>
+          <Text variant="title" color="textMuted">
+            {t('units.km')}
+          </Text>
+        </View>
+        {comparison ? (
+          <View style={styles.comparison}>
+            <Icon
+              name={comparison.icon}
+              size="iconSm"
+              color={comparison.up ? 'accent' : 'textMuted'}
+            />
+            <Text variant="caption" color={comparison.up ? 'accent' : 'textMuted'}>
+              {comparison.text}
+            </Text>
+          </View>
+        ) : null}
+        <WeekChart days={days} today={today} />
+      </Card>
+      <StatRow
+        stats={[
+          { label: t('home.runs'), value: String(thisWeek.runs) },
+          { label: t('home.time'), value: formatDuration(thisWeek.moving_time_s) },
+          { label: t('home.avgPace'), value: formatPace(avgPace), unit: t('units.paceShort') },
+        ]}
+      />
+    </View>
+  );
+}
+
+function RecentRuns({ timeZone, onOpen }: { timeZone?: string; onOpen: (id: string) => void }) {
+  const query = useRecentRuns();
+
+  if (query.isPending) return <LoadingView />;
+  if (query.isError) {
+    return <ErrorView message={t('home.recentError')} onRetry={() => void query.refetch()} />;
+  }
+  if (query.data.items.length === 0) {
+    return (
+      <Card>
+        <Text color="textMuted">{t('home.noRunsYet')}</Text>
+      </Card>
+    );
+  }
+  return (
+    <View style={styles.list}>
+      {query.data.items.map((run) => (
+        <RunListItem key={run.id} run={run} timeZone={timeZone} onPress={() => onOpen(run.id)} />
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   stack: { gap: spacing.lg },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  weekCard: { gap: spacing.md },
+  distanceRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
+  comparison: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  list: { gap: spacing.md },
   kcal: { flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
   kcalText: { gap: spacing.xs },
 });

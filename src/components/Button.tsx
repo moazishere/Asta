@@ -4,7 +4,7 @@ import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 import { colors, radii, sizes, spacing, type ColorToken } from '@/theme';
 
-type Variant = 'primary' | 'dark' | 'light' | 'ghost';
+type Variant = 'primary' | 'dark' | 'light' | 'ghost' | 'danger';
 
 type Props = {
   label: string;
@@ -21,6 +21,7 @@ const palette: Record<Variant, { bg: ColorToken; pressed: ColorToken; fg: ColorT
   dark: { bg: 'surfaceRaised', pressed: 'border', fg: 'text' },
   light: { bg: 'surfaceLight', pressed: 'textMuted', fg: 'textOnLight' },
   ghost: { bg: 'bg', pressed: 'surface', fg: 'text' },
+  danger: { bg: 'surfaceRaised', pressed: 'border', fg: 'danger' },
 };
 
 export function Button({
