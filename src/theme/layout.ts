@@ -34,5 +34,6 @@ export const sizes = {
   roundButton: 48,
   mapMinHeight: 220,
   splitLabelWidth: 44,
+  foodRing: 180,
   splitPaceWidth: 76,
 } as const;

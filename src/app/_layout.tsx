@@ -88,6 +88,9 @@ function RootNavigator() {
           <Stack.Screen name="run-summary" options={{ presentation: 'modal' }} />
           <Stack.Screen name="runs/index" />
           <Stack.Screen name="runs/[id]" />
+          <Stack.Screen name="food-log/add" />
+          <Stack.Screen name="food-log/amount" />
+          <Stack.Screen name="food-log/[id]" />
         </Stack.Protected>
         {/* Dev-only component gallery: not reachable in release builds. */}
         <Stack.Protected guard={__DEV__ && signedIn && !needsOnboarding}>

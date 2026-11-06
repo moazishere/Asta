@@ -32,6 +32,7 @@ cd server
 npm install
 cp .env.example .env      # fill in DATABASE_URL and JWT_SECRET (generate one, see the file)
 npm run migrate           # creates the tables
+npm run seed:foods        # loads the ~55 starter foods from server/data/foods.json (re-run after editing it)
 npm run dev               # http://localhost:3000, check /health
 ```
 If `npm run migrate` fails with a `SET ROLE` / permission error, run `grant app_user to postgres;` once in the Supabase SQL editor.
@@ -49,7 +50,7 @@ Point the app at it: in `.env.local` set `EXPO_PUBLIC_API_URL` to your PC's LAN 
 2. Authorized redirect URI: `https://<your-render-url>/auth/google/callback` (Google does not accept LAN IPs, so test Google sign-in against the deployed server).
 3. Put the client ID and secret in Render's `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`. The app only ever sees a one-time code, never a Google secret.
 
-**Tests** (in-process Postgres, no Docker, no network): `cd server && npm test` (51 tests: API behaviour plus the database privacy rules).
+**Tests** (in-process Postgres, no Docker, no network): `cd server && npm test` (131 tests: API behaviour, food and run maths, and the database privacy rules).
 
 **Security notes**
 - Passwords are bcrypt-hashed; refresh tokens are stored only as hashes and rotate on every use (replaying an old one revokes the session).

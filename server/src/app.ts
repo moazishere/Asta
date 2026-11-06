@@ -7,6 +7,8 @@ import type { GoogleClient } from './lib/google.js';
 import { requireAuth } from './middleware/auth.js';
 import { errorHandler, notFound } from './middleware/error.js';
 import { authRouter } from './routes/auth.js';
+import { foodLogsRouter } from './routes/foodLogs.js';
+import { foodsRouter } from './routes/foods.js';
 import { profileRouter } from './routes/profile.js';
 import { runsRouter } from './routes/runs.js';
 import { statsRouter } from './routes/stats.js';
@@ -33,6 +35,8 @@ export function createApp(deps: AppDeps) {
   app.use('/auth', authRouter(deps));
   app.use('/me', requireAuth(deps.config), profileRouter(deps));
   app.use('/stats', requireAuth(deps.config), statsRouter(deps));
+  app.use('/foods', requireAuth(deps.config), foodsRouter(deps));
+  app.use('/food-logs', requireAuth(deps.config), foodLogsRouter(deps));
 
   app.use(notFound);
   app.use(errorHandler);

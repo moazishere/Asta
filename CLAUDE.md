@@ -45,6 +45,7 @@ npx eas-cli@latest build --profile development --platform android   # Android de
 cd server && npm install
 npm run dev                      # needs server/.env
 npm run migrate                  # apply server/migrations to DATABASE_URL
+npm run seed:foods               # load/refresh the starter foods from server/data/foods.json
 npm run typecheck && npm test    # tests run in-process Postgres (PGlite), no Docker/network
 npm run build && npm start       # production build (what Render runs)
 ```

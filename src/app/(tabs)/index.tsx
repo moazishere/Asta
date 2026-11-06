@@ -15,6 +15,8 @@ import {
   Text,
 } from '@/components';
 import { useProfile } from '@/features/auth/useProfile';
+import { useDay } from '@/features/food/hooks';
+import { goalProgress, kcalRemaining, todayIn } from '@/features/food/nutrition';
 import { useRecentRuns, useWeeklyStats } from '@/features/history/hooks';
 import { historyHref, runHref } from '@/features/history/routes';
 import { RunListItem } from '@/features/history/RunListItem';
@@ -48,21 +50,36 @@ export default function Home() {
         />
         <RecentRuns timeZone={profile?.timezone} onOpen={(id) => router.push(runHref(id))} />
 
-        <Card style={styles.kcal}>
-          <ProgressRing progress={0} size={96} strokeWidth={10}>
-            <Text variant="numeral">0</Text>
-          </ProgressRing>
-          <View style={styles.kcalText}>
-            <Text variant="title">{t('home.todayCalories')}</Text>
-            <Text variant="caption" color="textMuted">
-              {t('food.consumed', { goal })}
-            </Text>
-          </View>
-        </Card>
+        <TodayCalories goal={goal} timeZone={profile?.timezone} />
 
         <StartBar label={t('home.startRun')} onPress={() => router.navigate('/run')} />
       </View>
     </Screen>
+  );
+}
+
+// Today's calories: live from the food log, so it matches the Food tab exactly.
+function TodayCalories({ goal, timeZone }: { goal: number; timeZone?: string }) {
+  const query = useDay(todayIn(timeZone));
+  const consumed = query.data?.totals.kcal ?? 0;
+  const left = kcalRemaining(goal, consumed);
+  return (
+    <Card style={styles.kcal}>
+      <ProgressRing progress={goalProgress(goal, consumed)} size={96} strokeWidth={10}>
+        <Text variant="numeral">{consumed}</Text>
+      </ProgressRing>
+      <View style={styles.kcalText}>
+        <Text variant="title">{t('home.todayCalories')}</Text>
+        <Text variant="caption" color="textMuted">
+          {t('food.consumed', { goal })}
+        </Text>
+        {left !== null ? (
+          <Text variant="caption" color={left < 0 ? 'danger' : 'textMuted'}>
+            {left >= 0 ? t('food.kcalLeft', { kcal: left }) : t('food.kcalOver', { kcal: -left })}
+          </Text>
+        ) : null}
+      </View>
+    </Card>
   );
 }
 
