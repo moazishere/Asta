@@ -50,7 +50,12 @@ Point the app at it: in `.env.local` set `EXPO_PUBLIC_API_URL` to your PC's LAN 
 2. Authorized redirect URI: `https://<your-render-url>/auth/google/callback` (Google does not accept LAN IPs, so test Google sign-in against the deployed server).
 3. Put the client ID and secret in Render's `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`. The app only ever sees a one-time code, never a Google secret.
 
-**Tests** (in-process Postgres, no Docker, no network): `cd server && npm test` (131 tests: API behaviour, food and run maths, and the database privacy rules).
+**Friends, invites and live updates**
+- Friends find each other by exact username. The share button sends a link like `https://<server>/invite/<username>`; that page (served by the API) tries to open the app via its `asta://invite/<username>` link and shows install links (`APP_STORE_URL` / `PLAY_STORE_URL`, optional) if the app is missing. This uses the app's custom URL scheme, which works on iOS and Android without Apple/Google link-verification files.
+- Expo Go does not handle `asta://` links, so test invites in a development build, or type the username in the Friends screen.
+- Live updates (the friend-request badge) use a WebSocket on the same server at `/ws`. Render supports WebSockets on all plans.
+
+**Tests** (in-process Postgres, no Docker, no network): `cd server && npm test` (154 tests: API behaviour, WebSocket, food and run maths, and the database privacy rules).
 
 **Security notes**
 - Passwords are bcrypt-hashed; refresh tokens are stored only as hashes and rotate on every use (replaying an old one revokes the session).

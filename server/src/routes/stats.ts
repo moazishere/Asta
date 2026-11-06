@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import type { Db } from '../db.js';
 import { HttpError } from '../errors.js';
+import { getWeekAnchor } from '../lib/weekAnchor.js';
 import { buildWeekly, isValidDate, type DayRow } from '../lib/weekly.js';
 import { currentUserId } from '../middleware/auth.js';
 
@@ -20,16 +21,7 @@ export function statsRouter({ db }: { db: Db }) {
     const { week } = weeklyQuery.parse(req.query);
 
     const stats = await db.asUser(currentUserId(req), async (q) => {
-      const anchor = await q.query<{ tz: string; week_start: string; today: string }>(
-        `select t.tz,
-                to_char(date_trunc('week', coalesce($1::date, (now() at time zone t.tz)::date)::timestamp)::date, 'YYYY-MM-DD') as week_start,
-                to_char((now() at time zone t.tz)::date, 'YYYY-MM-DD') as today
-         from (select case when exists (select 1 from pg_timezone_names n where n.name = p.timezone)
-                           then p.timezone else 'UTC' end as tz
-               from profiles p) t`,
-        [week ?? null],
-      );
-      const a = anchor.rows[0];
+      const a = await getWeekAnchor(q, week);
       if (!a) throw new HttpError(404, 'profile_not_found');
 
       const days = await q.query<DayRow>(

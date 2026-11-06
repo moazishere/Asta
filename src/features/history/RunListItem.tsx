@@ -9,7 +9,7 @@ import { formatDuration, formatKm, formatPace } from '@/features/run/geo';
 import { t } from '@/lib/i18n';
 import { colors, radii, spacing } from '@/theme';
 
-type Props = { run: RunSummary; timeZone?: string; onPress: () => void };
+type Props = { run: RunSummary; timeZone?: string; onPress?: () => void };
 
 function RunListItemBase({ run, timeZone, onPress }: Props) {
   const date = formatRunDate(run.started_at, timeZone);
@@ -20,7 +20,8 @@ function RunListItemBase({ run, timeZone, onPress }: Props) {
 
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole={onPress ? 'button' : 'text'}
+      disabled={!onPress}
       accessibilityLabel={t('history.itemLabel', { date, time, distance, duration, pace })}
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}

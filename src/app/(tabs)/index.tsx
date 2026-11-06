@@ -8,6 +8,7 @@ import {
   Icon,
   LoadingView,
   ProgressRing,
+  RoundButton,
   Screen,
   SectionHeader,
   StartBar,
@@ -16,6 +17,9 @@ import {
 } from '@/components';
 import { useProfile } from '@/features/auth/useProfile';
 import { useDay } from '@/features/food/hooks';
+import { CountBadge } from '@/features/friends/components';
+import { useIncomingCount } from '@/features/friends/hooks';
+import { friendsHref } from '@/features/friends/routes';
 import { goalProgress, kcalRemaining, todayIn } from '@/features/food/nutrition';
 import { useRecentRuns, useWeeklyStats } from '@/features/history/hooks';
 import { historyHref, runHref } from '@/features/history/routes';
@@ -37,7 +41,10 @@ export default function Home() {
       <View style={styles.stack}>
         <View style={styles.header}>
           <Avatar name={name} uri={profile?.avatar_url} ring />
-          <Text variant="h1">{t('home.greeting', { name })}</Text>
+          <Text variant="h1" style={styles.greeting} numberOfLines={1}>
+            {t('home.greeting', { name })}
+          </Text>
+          <FriendsButton onPress={() => router.push(friendsHref)} />
         </View>
 
         <SectionHeader title={t('home.thisWeek')} />
@@ -80,6 +87,25 @@ function TodayCalories({ goal, timeZone }: { goal: number; timeZone?: string }) 
         ) : null}
       </View>
     </Card>
+  );
+}
+
+// People icon with a live count of friend requests waiting for me.
+function FriendsButton({ onPress }: { onPress: () => void }) {
+  const incoming = useIncomingCount();
+  return (
+    <View>
+      <RoundButton
+        icon="people"
+        accessibilityLabel={
+          incoming > 0
+            ? t('friends.openFriendsBadge', { count: incoming })
+            : t('friends.openFriends')
+        }
+        onPress={onPress}
+      />
+      <CountBadge count={incoming} />
+    </View>
   );
 }
 
@@ -189,6 +215,7 @@ function RecentRuns({ timeZone, onOpen }: { timeZone?: string; onOpen: (id: stri
 const styles = StyleSheet.create({
   stack: { gap: spacing.lg },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  greeting: { flex: 1 },
   weekCard: { gap: spacing.md },
   distanceRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
   comparison: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },

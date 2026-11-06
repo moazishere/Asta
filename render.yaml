@@ -26,3 +26,7 @@ services:
         sync: false
       - key: APP_REDIRECT_SCHEMES
         value: asta
+      - key: APP_STORE_URL # optional, used by the friend invite page
+        sync: false
+      - key: PLAY_STORE_URL # optional
+        sync: false

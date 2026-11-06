@@ -7,6 +7,7 @@ import { createApp } from '../src/app.js';
 import type { Config } from '../src/config.js';
 import type { Db, Queryable } from '../src/db.js';
 import type { GoogleClient, GoogleIdentity } from '../src/lib/google.js';
+import type { Hub, RealtimeEvent } from '../src/realtime.js';
 
 const migrationsDir = fileURLToPath(new URL('../migrations/', import.meta.url));
 
@@ -21,6 +22,8 @@ export const testConfig: Config = {
   googleClientId: 'client',
   googleClientSecret: 'secret',
   appRedirectSchemes: ['asta'],
+  appStoreUrl: undefined,
+  playStoreUrl: undefined,
   rateLimit: false,
 };
 
@@ -63,9 +66,21 @@ export function fakeGoogle(identities: Record<string, GoogleIdentity> = {}, conf
   return { client, identities };
 }
 
+/** A hub that records what was published, so tests can assert who was told what. */
+export function recordingHub() {
+  const events: { userId: string; event: RealtimeEvent }[] = [];
+  const hub: Hub = {
+    publish: (userId, event) => void events.push({ userId, event }),
+    attach() {},
+    close() {},
+  };
+  return { hub, events };
+}
+
 export async function createTestApp(opts: { googleConfigured?: boolean } = {}) {
   const { db, pg } = await createTestDb();
   const google = fakeGoogle({}, opts.googleConfigured ?? true);
-  const app = createApp({ db, config: testConfig, google: google.client });
-  return { app, db, pg, google };
+  const realtime = recordingHub();
+  const app = createApp({ db, config: testConfig, google: google.client, hub: realtime.hub });
+  return { app, db, pg, google, events: realtime.events, hub: realtime.hub };
 }

@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Button, Screen, Text } from '@/components';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/auth/useProfile';
+import { FriendsBootstrap } from '@/features/friends/FriendsBootstrap';
 import { RunBootstrap } from '@/features/run/RunBootstrap';
 import { t } from '@/lib/i18n';
 import { queryClient } from '@/lib/queryClient';
@@ -75,7 +76,12 @@ function RootNavigator() {
 
   return (
     <>
-      {signedIn && !needsOnboarding ? <RunBootstrap /> : null}
+      {signedIn && !needsOnboarding ? (
+        <>
+          <RunBootstrap />
+          <FriendsBootstrap />
+        </>
+      ) : null}
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)" />
@@ -91,7 +97,11 @@ function RootNavigator() {
           <Stack.Screen name="food-log/add" />
           <Stack.Screen name="food-log/amount" />
           <Stack.Screen name="food-log/[id]" />
+          <Stack.Screen name="friends/index" />
+          <Stack.Screen name="friends/[id]" />
         </Stack.Protected>
+        {/* invite/[username] is deliberately not listed in a guarded group: an invite link must open even
+          while signed out (it then remembers the invite and sends the user to sign in). */}
         {/* Dev-only component gallery: not reachable in release builds. */}
         <Stack.Protected guard={__DEV__ && signedIn && !needsOnboarding}>
           <Stack.Screen name="dev/gallery" options={{ presentation: 'modal' }} />

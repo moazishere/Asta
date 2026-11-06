@@ -40,6 +40,15 @@ export const tokenStore = {
   },
 };
 
+/**
+ * The current access token, after making sure it is still valid (a cheap authenticated call refreshes
+ * it if it expired). Used by the live-updates WebSocket, which cannot refresh tokens on its own.
+ */
+export async function freshAccessToken(): Promise<string | null> {
+  await apiFetch('/me').catch(() => undefined);
+  return accessToken;
+}
+
 /** AuthProvider registers this so a dead refresh token signs the user out of the UI. */
 export function setSessionLostHandler(handler: (() => void) | null) {
   onSessionLost = handler;

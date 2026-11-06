@@ -5,15 +5,18 @@ import type { Config } from './config.js';
 import type { Db } from './db.js';
 import type { GoogleClient } from './lib/google.js';
 import { requireAuth } from './middleware/auth.js';
+import type { Hub } from './realtime.js';
 import { errorHandler, notFound } from './middleware/error.js';
 import { authRouter } from './routes/auth.js';
 import { foodLogsRouter } from './routes/foodLogs.js';
+import { friendsRouter } from './routes/friends.js';
+import { inviteRouter } from './routes/invite.js';
 import { foodsRouter } from './routes/foods.js';
 import { profileRouter } from './routes/profile.js';
 import { runsRouter } from './routes/runs.js';
 import { statsRouter } from './routes/stats.js';
 
-export type AppDeps = { db: Db; config: Config; google: GoogleClient };
+export type AppDeps = { db: Db; config: Config; google: GoogleClient; hub: Hub };
 
 export function createApp(deps: AppDeps) {
   const app = express();
@@ -33,6 +36,8 @@ export function createApp(deps: AppDeps) {
   });
 
   app.use('/auth', authRouter(deps));
+  app.use('/invite', inviteRouter(deps));
+  app.use('/friends', requireAuth(deps.config), friendsRouter(deps));
   app.use('/me', requireAuth(deps.config), profileRouter(deps));
   app.use('/stats', requireAuth(deps.config), statsRouter(deps));
   app.use('/foods', requireAuth(deps.config), foodsRouter(deps));

@@ -4,6 +4,8 @@ import { StyleSheet, View } from 'react-native';
 import { Avatar, Button, ListRow, Screen, Text } from '@/components';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/auth/useProfile';
+import { useIncomingCount } from '@/features/friends/hooks';
+import { friendsHref } from '@/features/friends/routes';
 import { t } from '@/lib/i18n';
 import { spacing } from '@/theme';
 
@@ -11,6 +13,7 @@ export default function Profile() {
   const router = useRouter();
   const { signOut } = useAuth();
   const { data: profile } = useProfile();
+  const incoming = useIncomingCount();
   const name = profile?.display_name ?? profile?.username ?? '';
 
   return (
@@ -26,6 +29,12 @@ export default function Profile() {
           icon="flame-outline"
           title={t('profile.dailyGoal')}
           value={profile?.daily_kcal_goal ? `${profile.daily_kcal_goal} ${t('units.kcal')}` : '-'}
+        />
+        <ListRow
+          icon="people-outline"
+          title={t('friends.title')}
+          value={incoming > 0 ? String(incoming) : undefined}
+          onPress={() => router.push(friendsHref)}
         />
         {__DEV__ ? (
           <ListRow

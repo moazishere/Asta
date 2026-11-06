@@ -14,6 +14,8 @@ const schema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   APP_REDIRECT_SCHEMES: z.string().default('asta'),
+  APP_STORE_URL: z.string().url().optional().or(z.literal('')),
+  PLAY_STORE_URL: z.string().url().optional().or(z.literal('')),
 });
 
 export type Config = {
@@ -27,6 +29,9 @@ export type Config = {
   googleClientId?: string;
   googleClientSecret?: string;
   appRedirectSchemes: string[];
+  /** Where the invite page sends people who do not have the app yet (optional). */
+  appStoreUrl?: string;
+  playStoreUrl?: string;
   /** Brute-force limits on /auth. Tests turn this off. */
   rateLimit: boolean;
 };
@@ -53,6 +58,8 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     appRedirectSchemes: e.APP_REDIRECT_SCHEMES.split(',')
       .map((s) => s.trim())
       .filter(Boolean),
+    appStoreUrl: e.APP_STORE_URL || undefined,
+    playStoreUrl: e.PLAY_STORE_URL || undefined,
     rateLimit: true,
   };
 }
