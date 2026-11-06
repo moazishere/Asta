@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/design/logo/icon-preview.png" width="120" alt="Asta logo"></p>
+
 # Asta
 
 **Run, eat, compete.** A cross-platform (iOS + Android) running app with GPS run tracking, calorie logging, friends, and friend challenges with a live leaderboard.

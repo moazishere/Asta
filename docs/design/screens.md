@@ -47,3 +47,7 @@ Designed here, built in later phases (same components):
 ## Tab bar
 
 Floating dark pill. The active tab expands into a lime pill with icon + label (echoing the lime CTA bar); inactive tabs are icon-only in muted grey. The reference had no tab bar, so this one is new.
+
+## Logo
+
+An "A" built from two thick rounded strokes in the app's lime (`#DDF247`) on near-black (`#0D0D0F`), with a round dot where the crossbar would be: a route marker, so the letter and the sport are one shape. Sources are in `docs/design/logo/` (`mark.svg` transparent, `icon.svg` with background); the app icons in `assets/images/` and the iOS 26 layered icon in `assets/expo.icon/` are rendered from the same geometry, and `src/components/Logo.tsx` draws it in the app. The adaptive Android icon keeps the mark inside the central safe zone, and the monochrome version is a plain white silhouette that Android tints for themed icons.

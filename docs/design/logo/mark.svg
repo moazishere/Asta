@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Asta">
+  <!-- An "A" made of two rounded strokes; the dot where the crossbar would be is a route marker. -->
+  <path d="M296 772 L512 252 L728 772" fill="none" stroke="#DDF247" stroke-width="112" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="512" cy="606" r="62" fill="#DDF247"/>
+</svg>

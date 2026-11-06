@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { Button, Screen, StartBar, Text } from '@/components';
+import { Button, Logo, Screen, StartBar, Text } from '@/components';
 import { t } from '@/lib/i18n';
 import { colors, radii, spacing } from '@/theme';
 
@@ -29,6 +29,11 @@ export default function Welcome() {
             locations={[0.35, 1]}
             style={StyleSheet.absoluteFill}
           />
+          {/* A solid dark pill so the lime mark stays readable on any part of the photo. */}
+          <View style={styles.brand}>
+            <Logo size={32} />
+            <Text variant="title">{t('app.name')}</Text>
+          </View>
           <View style={styles.copy}>
             <Text variant="display">{t('auth.welcomeTitle')}</Text>
             <Text variant="display" color="accent">
@@ -58,6 +63,18 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderRadius: radii.xl,
     backgroundColor: colors.surface,
+  },
+  brand: {
+    position: 'absolute',
+    top: spacing.xl,
+    left: spacing.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.pill,
+    backgroundColor: colors.scrimDark,
   },
   copy: { gap: spacing.xs, padding: spacing.xxl },
   actions: { gap: spacing.md },

@@ -6,6 +6,7 @@ export { Icon } from './Icon';
 export type { IconName } from './Icon';
 export { Input } from './Input';
 export { ListRow } from './ListRow';
+export { Logo } from './Logo';
 export { ProgressBar } from './ProgressBar';
 export { ProgressRing } from './ProgressRing';
 export { RoundButton } from './RoundButton';
