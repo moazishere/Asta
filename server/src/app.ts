@@ -8,6 +8,7 @@ import { requireAuth } from './middleware/auth.js';
 import type { Hub } from './realtime.js';
 import { errorHandler, notFound } from './middleware/error.js';
 import { authRouter } from './routes/auth.js';
+import { challengesRouter } from './routes/challenges.js';
 import { foodLogsRouter } from './routes/foodLogs.js';
 import { friendsRouter } from './routes/friends.js';
 import { inviteRouter } from './routes/invite.js';
@@ -38,6 +39,7 @@ export function createApp(deps: AppDeps) {
   app.use('/auth', authRouter(deps));
   app.use('/invite', inviteRouter(deps));
   app.use('/friends', requireAuth(deps.config), friendsRouter(deps));
+  app.use('/challenges', requireAuth(deps.config), challengesRouter(deps));
   app.use('/me', requireAuth(deps.config), profileRouter(deps));
   app.use('/stats', requireAuth(deps.config), statsRouter(deps));
   app.use('/foods', requireAuth(deps.config), foodsRouter(deps));

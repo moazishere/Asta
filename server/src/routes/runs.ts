@@ -13,7 +13,9 @@ import {
   type GeoPoint,
 } from '../lib/geo.js';
 import { computeSplits } from '../lib/splits.js';
+import { notifyUserChallenges } from '../lib/challengeEvents.js';
 import { currentUserId } from '../middleware/auth.js';
+import type { Hub } from '../realtime.js';
 
 const MAX_POINTS = 50_000;
 const MAX_RUN_HOURS = 24;
@@ -67,7 +69,7 @@ type RunRow = {
 type RunListRow = RunRow & { route_polyline: string | null; cursor_t: string };
 const RUN_COLUMNS = `id, started_at, ended_at, distance_m, moving_time_s, avg_pace_s_per_km, kcal_est, suspicious`;
 
-export function runsRouter({ db }: { db: Db }) {
+export function runsRouter({ db, hub }: { db: Db; hub: Hub }) {
   const router = Router();
 
   router.post('/', async (req, res) => {
@@ -158,6 +160,8 @@ export function runsRouter({ db }: { db: Db }) {
       return { run: inserted.rows[0], created: true };
     });
 
+    // A new run can change the score of anyone in this runner's active challenges: refresh their boards.
+    if (result.created) await notifyUserChallenges(db, hub, userId);
     res.status(result.created ? 201 : 200).json(result.run);
   });
 
@@ -241,6 +245,7 @@ export function runsRouter({ db }: { db: Db }) {
       return r.rows.length > 0;
     });
     if (!removed) throw new HttpError(404, 'run_not_found');
+    await notifyUserChallenges(db, hub, currentUserId(req));
     res.status(204).end();
   });
 

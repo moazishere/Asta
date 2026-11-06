@@ -5,7 +5,9 @@ import type { Db, Queryable } from '../db.js';
 import { HttpError } from '../errors.js';
 import { macrosForGrams, scaleMacros, sumTotals, type Macros } from '../lib/nutrition.js';
 import { isValidDate } from '../lib/weekly.js';
+import { notifyUserChallenges } from '../lib/challengeEvents.js';
 import { currentUserId } from '../middleware/auth.js';
+import type { Hub } from '../realtime.js';
 
 const date = z.string().refine(isValidDate, 'Use YYYY-MM-DD');
 const meal = z.enum(['breakfast', 'lunch', 'dinner', 'snack']);
@@ -63,7 +65,7 @@ async function loadEntry(q: Queryable, id: string): Promise<Entry | undefined> {
   return r.rows[0];
 }
 
-export function foodLogsRouter({ db }: { db: Db }) {
+export function foodLogsRouter({ db, hub }: { db: Db; hub: Hub }) {
   const router = Router();
 
   // One day: every entry, the totals (computed from the same stored values, so the rows always add up
@@ -138,6 +140,7 @@ export function foodLogsRouter({ db }: { db: Db }) {
       }
       return loadEntry(q, id);
     });
+    await notifyUserChallenges(db, hub, currentUserId(req));
     res.status(201).json(entry);
   });
 
@@ -187,6 +190,7 @@ export function foodLogsRouter({ db }: { db: Db }) {
       );
       return loadEntry(q, id);
     });
+    await notifyUserChallenges(db, hub, currentUserId(req));
     res.json(entry);
   });
 
@@ -197,6 +201,7 @@ export function foodLogsRouter({ db }: { db: Db }) {
       return r.rows.length > 0;
     });
     if (!removed) throw new HttpError(404, 'entry_not_found');
+    await notifyUserChallenges(db, hub, currentUserId(req));
     res.status(204).end();
   });
 

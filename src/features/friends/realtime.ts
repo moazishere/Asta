@@ -18,7 +18,10 @@ export function useRealtime(enabled: boolean) {
 
   useEffect(() => {
     if (!enabled) return;
-    const refresh = () => void queryClient.invalidateQueries({ queryKey: ['friends'] });
+    const refresh = () => {
+      void queryClient.invalidateQueries({ queryKey: ['friends'] });
+      void queryClient.invalidateQueries({ queryKey: ['challenges'] });
+    };
     // http -> ws, https -> wss
     const url = `${env.apiUrl.replace(/^http/, 'ws')}/ws`;
 
@@ -53,7 +56,12 @@ export function useRealtime(enabled: boolean) {
         if (message.type === 'ready') {
           attempt = 0;
           refresh(); // catch up on anything that happened while we were disconnected
-        } else if (message.type === 'friends') {
+        } else if (
+          message.type === 'friends' ||
+          message.type === 'challenges' ||
+          message.type === 'leaderboard'
+        ) {
+          // Tiny "something changed" hints: refetch through the normal API (which does the authorising).
           refresh();
         }
       };

@@ -8,7 +8,10 @@ import { verifyAccessToken } from './lib/tokens.js';
 // Live updates over a WebSocket. The server only pushes tiny "something changed" hints; the app reacts
 // by refetching through the normal API, so authorisation always happens in one place (the routes).
 // Never put private data in an event.
-export type RealtimeEvent = { type: 'friends' } | { type: 'leaderboard'; challengeId: string }; // used by challenges (phase 6)
+export type RealtimeEvent =
+  | { type: 'friends' }
+  | { type: 'challenges' } // a challenge list changed (invite, join, start, end)
+  | { type: 'leaderboard'; challengeId: string }; // a score in this challenge may have changed
 
 export type Hub = {
   /** Sends an event to every open connection of `userId` (all their devices). */

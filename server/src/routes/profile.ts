@@ -4,7 +4,9 @@ import { z } from 'zod';
 import type { Config } from '../config.js';
 import type { Db } from '../db.js';
 import { HttpError, isUniqueViolation } from '../errors.js';
+import { notifyUserChallenges } from '../lib/challengeEvents.js';
 import { currentUserId } from '../middleware/auth.js';
+import type { Hub } from '../realtime.js';
 
 const PROFILE_COLUMNS = `id, username, display_name, avatar_url, height_cm, weight_kg, birth_year,
   sex, daily_kcal_goal, timezone, onboarded_at`;
@@ -50,7 +52,7 @@ const REQUIRED_FOR_ONBOARDING = [
   'daily_kcal_goal',
 ] as const;
 
-export function profileRouter({ db }: { db: Db; config: Config }) {
+export function profileRouter({ db, hub }: { db: Db; config: Config; hub: Hub }) {
   const router = Router();
 
   router.get('/', async (req, res) => {
@@ -105,6 +107,8 @@ export function profileRouter({ db }: { db: Db; config: Config }) {
         }
         return row;
       });
+      // A new calorie goal or time zone can change which days count in a calorie challenge.
+      await notifyUserChallenges(db, hub, currentUserId(req));
       res.json(profile);
     } catch (err) {
       if (isUniqueViolation(err))

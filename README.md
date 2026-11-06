@@ -55,7 +55,12 @@ Point the app at it: in `.env.local` set `EXPO_PUBLIC_API_URL` to your PC's LAN 
 - Expo Go does not handle `asta://` links, so test invites in a development build, or type the username in the Friends screen.
 - Live updates (the friend-request badge) use a WebSocket on the same server at `/ws`. Render supports WebSockets on all plans.
 
-**Tests** (in-process Postgres, no Docker, no network): `cd server && npm test` (154 tests: API behaviour, WebSocket, food and run maths, and the database privacy rules).
+**Challenges and the live leaderboard**
+- Scores live in the database (`server/migrations/0006_challenge_scoring.sql`): triggers update a member's score the moment a run or food entry changes, for active challenges only, and `recompute_challenge_scores()` rebuilds everything from scratch. Clients can never write scores.
+- Rules: a run counts if it started inside the window (suspicious runs never count, run-count challenges need 1 km or more); calorie challenges count completed local days within 10% of the goal, so only the score is ever shared, never what anyone ate. Ties go to whoever reached the value first.
+- A scheduler inside the API process (every minute) starts and ends challenges and records the winner, replacing `pg_cron`. Updates reach other members through the same WebSocket as friend requests.
+
+**Tests** (in-process Postgres, no Docker, no network): `cd server && npm test` (186 tests: API behaviour, WebSocket, challenge scoring, food and run maths, and the database privacy rules).
 
 **Security notes**
 - Passwords are bcrypt-hashed; refresh tokens are stored only as hashes and rotate on every use (replaying an old one revokes the session).

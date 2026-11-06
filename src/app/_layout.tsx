@@ -97,6 +97,8 @@ function RootNavigator() {
           <Stack.Screen name="food-log/add" />
           <Stack.Screen name="food-log/amount" />
           <Stack.Screen name="food-log/[id]" />
+          <Stack.Screen name="challenges/new" />
+          <Stack.Screen name="challenges/[id]" />
           <Stack.Screen name="friends/index" />
           <Stack.Screen name="friends/[id]" />
         </Stack.Protected>
