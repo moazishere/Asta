@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 
 import type { ChallengeDetail, ChallengeSummary, ChallengeType } from './types';
 import { ApiError, apiFetch } from '@/lib/api';
+import { errorHaptic, successHaptic } from '@/lib/haptics';
 import { t } from '@/lib/i18n';
+import { showToast } from '@/lib/toast';
 
 export function useChallenges() {
   return useQuery({
@@ -46,7 +47,10 @@ function useChallengeAction<TVars, TResult = unknown>(fn: (vars: TVars) => Promi
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: fn,
-    onSuccess: invalidate,
+    onSuccess: () => {
+      successHaptic();
+      invalidate();
+    },
     onError: (err) => {
       const message =
         err instanceof ApiError && err.code === 'challenge_ended'
@@ -54,7 +58,8 @@ function useChallengeAction<TVars, TResult = unknown>(fn: (vars: TVars) => Promi
           : err instanceof ApiError && err.code === 'invalid_challenge'
             ? err.message
             : t('common.genericError');
-      Alert.alert(message);
+      errorHaptic();
+      showToast(message, 'error');
     },
   });
 }

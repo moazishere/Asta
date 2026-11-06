@@ -9,10 +9,10 @@ import { challengeHref, newChallengeHref } from './routes';
 import {
   EmptyView,
   ErrorView,
-  LoadingView,
   RoundButton,
   Screen,
   SegmentedControl,
+  SkeletonList,
   Text,
 } from '@/components';
 import { t } from '@/lib/i18n';
@@ -51,7 +51,7 @@ export function ChallengesScreen() {
         </View>
 
         {query.isPending ? (
-          <LoadingView />
+          <SkeletonList count={3} height={120} />
         ) : query.isError ? (
           <ErrorView message={t('challenges.loadError')} onRetry={() => void query.refetch()} />
         ) : (

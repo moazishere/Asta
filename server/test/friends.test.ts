@@ -11,7 +11,7 @@ import { createApp } from '../src/app.js';
 import { decodePolyline, haversineM } from '../src/lib/geo.js';
 import { renderInvitePage } from '../src/lib/invitePage.js';
 import { createHub } from '../src/realtime.js';
-import { createTestApp, fakeGoogle, testConfig } from './helpers.js';
+import { createTestApp, fakeGoogle, recordingPush, testConfig } from './helpers.js';
 
 const { app, db, pg, events } = await createTestApp();
 const api = () => request(app);
@@ -432,7 +432,13 @@ describe('live updates (WebSocket)', () => {
   function startServer() {
     const hub = createHub(testConfig);
     const server = createServer(
-      createApp({ db, config: testConfig, google: fakeGoogle().client, hub }),
+      createApp({
+        db,
+        config: testConfig,
+        google: fakeGoogle().client,
+        hub,
+        push: recordingPush().sender,
+      }),
     );
     hub.attach(server);
     server.listen(0);

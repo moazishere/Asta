@@ -7,6 +7,7 @@ import { createApp } from '../src/app.js';
 import type { Config } from '../src/config.js';
 import type { Db, Queryable } from '../src/db.js';
 import type { GoogleClient, GoogleIdentity } from '../src/lib/google.js';
+import type { PushMessage, PushSender } from '../src/push.js';
 import type { Hub, RealtimeEvent } from '../src/realtime.js';
 
 const migrationsDir = fileURLToPath(new URL('../migrations/', import.meta.url));
@@ -66,6 +67,9 @@ export function fakeGoogle(identities: Record<string, GoogleIdentity> = {}, conf
   return { client, identities };
 }
 
+/** A hub that delivers nothing. */
+export const nullHubForTests: Hub = { publish() {}, attach() {}, close() {} };
+
 /** A hub that records what was published, so tests can assert who was told what. */
 export function recordingHub() {
   const events: { userId: string; event: RealtimeEvent }[] = [];
@@ -77,10 +81,30 @@ export function recordingHub() {
   return { hub, events };
 }
 
+/** Records push messages instead of sending them; `rejectTokens` simulates Expo saying a token is dead. */
+export function recordingPush() {
+  const messages: PushMessage[] = [];
+  const rejectTokens = new Set<string>();
+  const sender: PushSender = {
+    async send(batch) {
+      messages.push(...batch);
+      return { invalidTokens: batch.map((m) => m.to).filter((to) => rejectTokens.has(to)) };
+    },
+  };
+  return { sender, messages, rejectTokens };
+}
+
 export async function createTestApp(opts: { googleConfigured?: boolean } = {}) {
   const { db, pg } = await createTestDb();
   const google = fakeGoogle({}, opts.googleConfigured ?? true);
   const realtime = recordingHub();
-  const app = createApp({ db, config: testConfig, google: google.client, hub: realtime.hub });
-  return { app, db, pg, google, events: realtime.events, hub: realtime.hub };
+  const push = recordingPush();
+  const app = createApp({
+    db,
+    config: testConfig,
+    google: google.client,
+    hub: realtime.hub,
+    push: push.sender,
+  });
+  return { app, db, pg, google, events: realtime.events, hub: realtime.hub, push };
 }

@@ -1,7 +1,7 @@
 import * as Location from 'expo-location';
-import { useNavigation, useRouter } from 'expo-router';
+import { useIsFocused, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
-import { Alert, AppState, Linking, StyleSheet, View } from 'react-native';
+import { Alert, AppState, Linking, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import {
   estimateKcal,
@@ -35,7 +35,9 @@ import {
   Text,
 } from '@/components';
 import { useProfile } from '@/features/auth/useProfile';
+import { heavyHaptic, tapHaptic } from '@/lib/haptics';
 import { t } from '@/lib/i18n';
+import { showToast } from '@/lib/toast';
 import { radii, sizes, spacing } from '@/theme';
 
 // Ask about background access at most once per app session; the user can always say "Not now".
@@ -98,10 +100,11 @@ export function RunScreen() {
 
   async function begin() {
     setStarting(true);
+    heavyHaptic();
     try {
       await startRun(profile?.weight_kg ?? 70);
     } catch {
-      Alert.alert(t('common.genericError'));
+      showToast(t('common.genericError'), 'error');
     } finally {
       setStarting(false);
     }
@@ -131,9 +134,10 @@ export function RunScreen() {
       {
         text: t('run.endConfirmYes'),
         onPress: async () => {
+          heavyHaptic();
           const id = await finish();
           if (id) router.push(summaryHref(id));
-          else Alert.alert(t('run.tooShort'));
+          else showToast(t('run.tooShort'), 'info');
         },
       },
     ]);
@@ -145,7 +149,10 @@ export function RunScreen() {
     return (
       <Screen scroll={false}>
         <ActiveRun
-          onTogglePause={() => (phase === 'paused' ? resume() : pause())}
+          onTogglePause={() => {
+            tapHaptic();
+            return phase === 'paused' ? resume() : pause();
+          }}
           onEnd={onEndPressed}
         />
       </Screen>
@@ -218,8 +225,12 @@ export function RunScreen() {
 }
 
 function ActiveRun({ onTogglePause, onEnd }: { onTogglePause: () => void; onEnd: () => void }) {
-  const now = useRunTicker();
+  const focused = useIsFocused();
+  const now = useRunTicker(focused);
   const elapsedS = useElapsedSeconds(now);
+  // Short phones (iPhone SE class): a smaller map and no footnote so the controls never fall off screen.
+  const { height } = useWindowDimensions();
+  const compact = height < 720;
 
   const phase = useRunStore((s) => s.phase);
   const route = useRunStore((s) => s.route);
@@ -258,7 +269,7 @@ function ActiveRun({ onTogglePause, onEnd }: { onTogglePause: () => void; onEnd:
         ) : null}
       </View>
 
-      <View style={styles.map}>
+      <View style={[styles.map, compact && styles.mapCompact]}>
         <RunMap route={route} follow={!paused} />
       </View>
 
@@ -285,9 +296,11 @@ function ActiveRun({ onTogglePause, onEnd }: { onTogglePause: () => void; onEnd:
           },
         ]}
       />
-      <Text variant="caption" color="textMuted" style={styles.estimate}>
-        {t('summary.estimateNote')}
-      </Text>
+      {compact ? null : (
+        <Text variant="caption" color="textMuted" style={styles.estimate}>
+          {t('summary.estimateNote')}
+        </Text>
+      )}
 
       <View style={styles.controls}>
         <RoundButton
@@ -316,6 +329,7 @@ const styles = StyleSheet.create({
   },
   distanceCard: { gap: spacing.xs, alignItems: 'center' },
   distanceRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
+  mapCompact: { minHeight: sizes.mapMinHeight * 0.55 },
   estimate: { textAlign: 'center' },
   controls: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   end: { flex: 1 },

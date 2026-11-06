@@ -8,7 +8,7 @@ import { validateChallenge } from '../src/lib/challengeRules.js';
 import { tickChallenges } from '../src/scheduler.js';
 import { createTestApp } from './helpers.js';
 
-const { app, db, pg, events, hub } = await createTestApp();
+const { app, db, pg, events, hub, push } = await createTestApp();
 const api = () => request(app);
 
 type Person = { accessToken: string; user: { id: string }; username: string };
@@ -384,7 +384,7 @@ describe('scheduler', () => {
     assert.equal((await board(cid)).size, 0);
 
     events.length = 0;
-    const changes = await tickChallenges(db, hub);
+    const changes = await tickChallenges(db, hub, push.sender);
     assert.ok(changes.some((c) => c.challenge_id === cid && c.change === 'activated'));
     assert.equal(
       (await pg.query<{ status: string }>(`select status from challenges where id = $1`, [cid]))
@@ -398,7 +398,9 @@ describe('scheduler', () => {
       'members are told',
     );
     assert.deepEqual(
-      await tickChallenges(db, hub).then((c) => c.filter((x) => x.challenge_id === cid)),
+      await tickChallenges(db, hub, push.sender).then((c) =>
+        c.filter((x) => x.challenge_id === cid),
+      ),
       [],
       'idempotent',
     );
@@ -422,7 +424,7 @@ describe('scheduler', () => {
       cid,
     ]);
 
-    const changes = await tickChallenges(db, hub);
+    const changes = await tickChallenges(db, hub, push.sender);
     assert.ok(changes.some((c) => c.challenge_id === cid && c.change === 'ended'));
     const row = (
       await pg.query<{ status: string; winner_id: string }>(
@@ -451,7 +453,7 @@ describe('scheduler', () => {
     await pg.query(`update challenges set ends_at = now() - interval '1 second' where id = $1`, [
       cid,
     ]);
-    await tickChallenges(db, hub);
+    await tickChallenges(db, hub, push.sender);
     const row = (
       await pg.query<{ winner_id: string | null }>(
         `select winner_id from challenges where id = $1`,
@@ -476,7 +478,7 @@ describe('scheduler', () => {
     await pg.query(`update challenges set ends_at = now() - interval '1 second' where id = $1`, [
       cid,
     ]);
-    await tickChallenges(db, hub);
+    await tickChallenges(db, hub, push.sender);
     assert.equal(await valueOf(cid, a), 1, 'after the end every logged day counts');
   });
 });

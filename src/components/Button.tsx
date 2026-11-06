@@ -1,6 +1,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon, type IconName } from './Icon';
+import { tapHaptic } from '@/lib/haptics';
 import { Text } from './Text';
 import { colors, radii, sizes, spacing, type ColorToken } from '@/theme';
 
@@ -41,7 +42,10 @@ export function Button({
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: inactive, busy: loading }}
       disabled={inactive}
-      onPress={onPress}
+      onPress={() => {
+        tapHaptic();
+        onPress?.();
+      }}
       style={({ pressed }) => [
         styles.base,
         { backgroundColor: colors[pressed ? p.pressed : p.bg] },

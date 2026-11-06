@@ -8,6 +8,7 @@ import { useRunStore } from './runStore';
 import { syncPendingRuns } from './sync';
 import { summaryHref } from './routes';
 import { t } from '@/lib/i18n';
+import { showToast } from '@/lib/toast';
 
 /**
  * Mounted once while signed in. On app start it
@@ -31,7 +32,7 @@ export function RunBootstrap() {
             onPress: async () => {
               const id = await saveRecovered(run);
               if (id) router.push(summaryHref(id));
-              else Alert.alert(t('run.tooShort'));
+              else showToast(t('run.tooShort'), 'info');
             },
           },
           { text: t('run.recoverResume'), onPress: () => void resumeRecovered(run) },

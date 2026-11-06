@@ -6,6 +6,7 @@ Cross-platform (Android + iOS) running app: GPS run tracking, calorie/food loggi
 
 - **App** (repo root): React Native + Expo SDK 58, **development build (not Expo Go)** because background location needs native code. TypeScript strict. Expo Router (routes in `src/app/`), TanStack Query (server state), Zustand (live run-session state), expo-secure-store (refresh token).
 - Device features: expo-location + expo-task-manager (background GPS), expo-sqlite (local GPS buffer), react-native-maps, Expo Notifications, EAS Build.
+- Push: the API sends through Expo's push service (`expo-server-sdk`, `server/src/push.ts`); tokens in `push_tokens`, per-user switches in `notification_settings`. Never fail a request because a push failed.
 - **API** (`server/`, its own `package.json`): Express 5 + TypeScript (ESM), `pg`, zod, JWT auth we implement ourselves (bcrypt passwords, rotating refresh tokens, Google sign-in via a server-side redirect). Deployed on Render (`render.yaml`).
 - **Database**: Postgres hosted on Supabase, used as a plain database only (no Supabase Auth/Realtime/Data API). Migrations live in `server/migrations/`.
 
@@ -37,7 +38,7 @@ npm install
 npx expo start --dev-client      # dev server for the development build
 npx expo lint                    # lint
 npx tsc --noEmit                 # typecheck
-npm test                         # app unit tests (run maths)
+npm test                         # app unit tests (run, food, history, challenge maths)
 npx expo-doctor                  # diagnose config/dependency problems
 npx eas-cli@latest build --profile development --platform android   # Android dev build (cloud)
 

@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon, type IconName } from './Icon';
+import { tapHaptic } from '@/lib/haptics';
 import { Text } from './Text';
 import { colors, radii, sizes, spacing } from '@/theme';
 
@@ -19,7 +20,10 @@ export function StartBar({ label, onPress, icon = 'walk', disabled = false }: Pr
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
       disabled={disabled}
-      onPress={onPress}
+      onPress={() => {
+        tapHaptic();
+        onPress();
+      }}
       style={({ pressed }) => [
         styles.bar,
         pressed && { backgroundColor: colors.accentPressed },

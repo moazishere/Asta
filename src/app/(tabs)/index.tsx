@@ -6,11 +6,12 @@ import {
   Card,
   ErrorView,
   Icon,
-  LoadingView,
   ProgressRing,
   RoundButton,
   Screen,
   SectionHeader,
+  Skeleton,
+  SkeletonList,
   StartBar,
   StatRow,
   Text,
@@ -28,7 +29,7 @@ import { percentChange } from '@/features/history/stats';
 import { WeekChart } from '@/features/history/WeekChart';
 import { formatDuration, formatKm, formatPace, paceSecPerKm } from '@/features/run/geo';
 import { t } from '@/lib/i18n';
-import { spacing } from '@/theme';
+import { radii, spacing } from '@/theme';
 
 export default function Home() {
   const router = useRouter();
@@ -112,12 +113,7 @@ function FriendsButton({ onPress }: { onPress: () => void }) {
 function WeeklySummary() {
   const query = useWeeklyStats();
 
-  if (query.isPending)
-    return (
-      <Card>
-        <LoadingView />
-      </Card>
-    );
+  if (query.isPending) return <Skeleton height={260} radius={radii.lg} />;
   if (query.isError) {
     return (
       <Card>
@@ -192,7 +188,7 @@ function WeeklySummary() {
 function RecentRuns({ timeZone, onOpen }: { timeZone?: string; onOpen: (id: string) => void }) {
   const query = useRecentRuns();
 
-  if (query.isPending) return <LoadingView />;
+  if (query.isPending) return <SkeletonList count={2} height={88} />;
   if (query.isError) {
     return <ErrorView message={t('home.recentError')} onRetry={() => void query.refetch()} />;
   }

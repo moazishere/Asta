@@ -11,6 +11,7 @@ export const en = {
   'common.comingSoon': 'Coming soon',
   'common.retry': 'Retry',
   'common.back': 'Back',
+  'common.saveFailed': 'Could not save. Please try again.',
 
   'tabs.home': 'Home',
   'tabs.run': 'Run',
@@ -354,8 +355,28 @@ export const en = {
   'invite.own': 'This is your own invite link. Share it with a friend.',
   'invite.signInFirst': 'Sign in or create an account to add @{username}.',
 
+  'notifications.title': 'Notifications',
+  'notifications.friendRequests': 'Friend requests',
+  'notifications.friendRequestsBody': 'When someone sends you a friend request.',
+  'notifications.challengeInvites': 'Challenge invitations',
+  'notifications.challengeInvitesBody': 'When a friend invites you to a challenge.',
+  'notifications.leaderboardPassed': 'Someone passes you',
+  'notifications.leaderboardPassedBody': 'When a friend moves ahead of you in a challenge.',
+  'notifications.challengeEnded': 'Challenge results',
+  'notifications.challengeEndedBody': 'When a challenge ends, with the winner.',
+  'notifications.offTitle': 'Notifications are off',
+  'notifications.offBody': 'Turn them on to hear about friend requests and challenges.',
+  'notifications.deniedBody': 'Notifications are blocked for Asta. Open Settings to allow them.',
+  'notifications.turnOn': 'Turn on',
+  'notifications.loadError': 'Could not load your notification settings.',
+  'notifications.promptTitle': 'Stay in the loop',
+  'notifications.promptBody':
+    'Get notified about friend requests, challenge invitations and results. You can change this any time in Profile.',
+  'notifications.promptLater': 'Not now',
+
   'profile.title': 'Profile',
   'profile.dailyGoal': 'Daily calorie goal',
+  'profile.notifications': 'Notifications',
   'profile.devGallery': 'Component gallery',
 } as const;
 

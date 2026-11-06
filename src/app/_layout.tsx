@@ -6,10 +6,11 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { Button, Screen, Text } from '@/components';
+import { Button, Screen, Text, ToastHost } from '@/components';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/auth/useProfile';
 import { FriendsBootstrap } from '@/features/friends/FriendsBootstrap';
+import { NotificationsBootstrap } from '@/features/notifications/NotificationsBootstrap';
 import { RunBootstrap } from '@/features/run/RunBootstrap';
 import { t } from '@/lib/i18n';
 import { queryClient } from '@/lib/queryClient';
@@ -28,6 +29,7 @@ export default function RootLayout() {
         <AuthProvider>
           <StatusBar style="light" />
           <RootNavigator />
+          <ToastHost />
         </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
@@ -80,6 +82,7 @@ function RootNavigator() {
         <>
           <RunBootstrap />
           <FriendsBootstrap />
+          <NotificationsBootstrap />
         </>
       ) : null}
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
@@ -100,6 +103,7 @@ function RootNavigator() {
           <Stack.Screen name="challenges/new" />
           <Stack.Screen name="challenges/[id]" />
           <Stack.Screen name="friends/index" />
+          <Stack.Screen name="settings/notifications" />
           <Stack.Screen name="friends/[id]" />
         </Stack.Protected>
         {/* invite/[username] is deliberately not listed in a guarded group: an invite link must open even

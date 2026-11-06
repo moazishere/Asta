@@ -1,86 +1,133 @@
 # Asta
 
-Running app for iOS and Android: GPS run tracking, calorie logging, friends, and friend challenges with a live leaderboard.
+**Run, eat, compete.** A cross-platform (iOS + Android) running app with GPS run tracking, calorie logging, friends, and friend challenges with a live leaderboard.
 
-Built with React Native (Expo), TypeScript, an Express API and Postgres. Status: Phase 1 (design system, navigation, schema, auth) on an Express backend. See [claude-code-prompts.md](claude-code-prompts.md) for the build plan.
+Built with React Native (Expo), TypeScript, an Express API and Postgres. Dark, lime-accented design adapted from a cycling concept to running.
 
-## Setup
+> Screenshots: add yours to [`docs/screenshots/`](docs/screenshots/) and they will show up in the tables below.
 
-Requirements: Node 22.13+ (required by Expo SDK 58), an Android phone (or emulator), a free [Expo](https://expo.dev) account.
+| Home | Run | Run detail | Food |
+| :-: | :-: | :-: | :-: |
+| ![Home](docs/screenshots/home.png) | ![Run](docs/screenshots/run.png) | ![Run detail](docs/screenshots/run-detail.png) | ![Food](docs/screenshots/food.png) |
 
-```bash
-npm install
-cp .env.example .env.local        # then fill in the values
+| Friends | Challenges | Leaderboard | Notifications |
+| :-: | :-: | :-: | :-: |
+| ![Friends](docs/screenshots/friends.png) | ![Challenges](docs/screenshots/challenges.png) | ![Leaderboard](docs/screenshots/leaderboard.png) | ![Notifications](docs/screenshots/notifications.png) |
+
+## Features
+
+- **Run tracking.** Live distance, pace, time and map route. Keeps recording with the screen locked (background location), survives crashes (every GPS fix is saved to the phone first), and uploads when online.
+- **History and stats.** Run list with route thumbnails, per-kilometre splits, weekly totals compared with last week, and a bar chart per day, all in the user's own time zone.
+- **Food and calories.** English and Arabic search over a starter set of Levantine and everyday foods, custom foods, quick add, an editable day view with a calorie ring and macros, and instant (optimistic) updates.
+- **Friends.** Find by exact username or share an invite link, requests, blocking, a friend list with weekly distance, and friend profiles that only ever show a trimmed route.
+- **Challenges.** Distance, run-count and calorie-day challenges with invitations, a live leaderboard, tie-breaking by who got there first, and a winner when it ends.
+- **Live updates and push.** WebSocket hints refresh badges and leaderboards instantly; push notifications for friend requests, invitations, "someone passed you" and results, each switchable.
+- **Platform polish.** Native iOS tab bar with Liquid Glass on iOS 26, skeleton loaders, toasts, haptics, safe areas, keyboard avoidance, screen-reader labels and compact layouts for small phones.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Phone["Phone: Expo / React Native"]
+    UI["Screens (Expo Router)"]
+    BG["Background location task"]
+    SQLite[("Local SQLite buffer")]
+    BG -->|every GPS fix| SQLite
+    SQLite --> UI
+  end
+
+  subgraph Server["API: Express on Render"]
+    API["Routes + zod validation"]
+    Hub["WebSocket hub /ws"]
+    Sched["Scheduler (every minute)"]
+    Pusher["Push sender"]
+  end
+
+  DB[("Postgres on Supabase<br/>RLS, triggers, functions")]
+  Expo["Expo push service"]
+
+  UI -- "REST + JWT" --> API
+  Hub -. "'something changed' hints" .-> UI
+  API -- "runs as app_user, RLS bound to the caller" --> DB
+  Sched -- "advance_challenges()" --> DB
+  API --> Hub
+  Sched --> Hub
+  API --> Pusher
+  Sched --> Pusher
+  Pusher --> Expo -. "APNs / FCM" .-> UI
 ```
 
-| Variable | What it is |
-| --- | --- |
-| `EXPO_PUBLIC_API_URL` | Base URL of the Express API |
-| `GOOGLE_MAPS_ANDROID_API_KEY` | Google Maps SDK for Android key (build-time) |
+The phone never talks to the database. The API runs every user request as a low-privilege Postgres role (`app_user`) with the caller's id attached, so Row Level Security is a second line of defence behind the route checks.
 
-## Backend (Express API + Postgres)
+## Database schema
 
-The app talks to an Express API in [`server/`](server/), which talks to Postgres. Supabase is only the hosted Postgres here; its auth and API features are not used.
-
-**1. Database**
-1. Create a free project at [supabase.com](https://supabase.com). In the dashboard, turn off the Data API (Project Settings > Data API) and disable email signups under Authentication, since nothing should reach the database except our API.
-2. Copy the connection string (Connect > Session pooler, with your database password filled in).
-
-**2. Run the API locally**
-```bash
-cd server
-npm install
-cp .env.example .env      # fill in DATABASE_URL and JWT_SECRET (generate one, see the file)
-npm run migrate           # creates the tables
-npm run seed:foods        # loads the ~55 starter foods from server/data/foods.json (re-run after editing it)
-npm run dev               # http://localhost:3000, check /health
-```
-If `npm run migrate` fails with a `SET ROLE` / permission error, run `grant app_user to postgres;` once in the Supabase SQL editor.
-
-Point the app at it: in `.env.local` set `EXPO_PUBLIC_API_URL` to your PC's LAN address (`ipconfig`), e.g. `http://192.168.1.20:3000`. A phone cannot use `localhost`, and it must be on the same Wi-Fi (Windows may ask to allow Node through the firewall).
-
-**3. Deploy (Render, free tier)**
-1. Push the repo to GitHub, then Render > New > Blueprint > pick the repo (it reads `render.yaml`).
-2. Set `DATABASE_URL`, and `PUBLIC_URL` (your service URL, e.g. `https://asta-api.onrender.com`). `JWT_SECRET` is generated for you.
-3. The free instance sleeps when idle, so the first request after a pause takes about 30 seconds.
-4. Set `EXPO_PUBLIC_API_URL` to the Render URL in `.env.local` / your EAS build environment.
-
-**4. Google sign-in (optional)**
-1. Google Cloud Console > APIs & Services > Credentials > Create OAuth client ID > **Web application**.
-2. Authorized redirect URI: `https://<your-render-url>/auth/google/callback` (Google does not accept LAN IPs, so test Google sign-in against the deployed server).
-3. Put the client ID and secret in Render's `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`. The app only ever sees a one-time code, never a Google secret.
-
-**Friends, invites and live updates**
-- Friends find each other by exact username. The share button sends a link like `https://<server>/invite/<username>`; that page (served by the API) tries to open the app via its `asta://invite/<username>` link and shows install links (`APP_STORE_URL` / `PLAY_STORE_URL`, optional) if the app is missing. This uses the app's custom URL scheme, which works on iOS and Android without Apple/Google link-verification files.
-- Expo Go does not handle `asta://` links, so test invites in a development build, or type the username in the Friends screen.
-- Live updates (the friend-request badge) use a WebSocket on the same server at `/ws`. Render supports WebSockets on all plans.
-
-**Challenges and the live leaderboard**
-- Scores live in the database (`server/migrations/0006_challenge_scoring.sql`): triggers update a member's score the moment a run or food entry changes, for active challenges only, and `recompute_challenge_scores()` rebuilds everything from scratch. Clients can never write scores.
-- Rules: a run counts if it started inside the window (suspicious runs never count, run-count challenges need 1 km or more); calorie challenges count completed local days within 10% of the goal, so only the score is ever shared, never what anyone ate. Ties go to whoever reached the value first.
-- A scheduler inside the API process (every minute) starts and ends challenges and records the winner, replacing `pg_cron`. Updates reach other members through the same WebSocket as friend requests.
-
-**Tests** (in-process Postgres, no Docker, no network): `cd server && npm test` (186 tests: API behaviour, WebSocket, challenge scoring, food and run maths, and the database privacy rules).
-
-**Security notes**
-- Passwords are bcrypt-hashed; refresh tokens are stored only as hashes and rotate on every use (replaying an old one revokes the session).
-- There is no email verification or password reset yet. Because emails are unverified, signing in with Google to an address that already has a password account replaces that password, so a squatter cannot keep access.
-
-## Running
-
-This app needs a **development build** (background location does not work in Expo Go).
-
-```bash
-npx eas-cli@latest login
-npx eas-cli@latest build --profile development --platform android   # install the resulting APK on your phone
-npx expo start --dev-client
+```mermaid
+erDiagram
+  users ||--|| profiles : "1:1"
+  users ||--o{ refresh_tokens : has
+  profiles ||--o{ runs : records
+  runs ||--o{ run_points : "GPS points"
+  profiles ||--o{ food_logs : logs
+  foods ||--o{ food_logs : "snapshot of"
+  profiles ||--o{ friendships : "requests / accepts"
+  profiles ||--o{ challenges : creates
+  challenges ||--o{ challenge_members : has
+  challenges ||--o{ challenge_scores : ranks
+  profiles ||--o{ push_tokens : registers
+  profiles ||--o| notification_settings : configures
 ```
 
-iOS: `npx eas-cli@latest build --profile development --platform ios` (requires an Apple Developer account).
+Migrations are in [`server/migrations/`](server/migrations/) (7 files). Highlights:
 
-## Quality checks
+- **Privacy by design.** `profiles`, `runs`, `run_points` and `food_logs` are owner-only. Friends read two narrow views (`profile_cards`, `friend_runs`) that expose only a username/avatar and a route with the first and last 200 m cut off. Calories and food never leave the owner.
+- **Scores can't be forged.** Clients have no write access to `challenge_scores`; only security-definer triggers do. A `recompute_challenge_scores()` function rebuilds everything from scratch as the source of truth.
+- **Server-derived data.** The phone uploads raw GPS points; the server recomputes distance, moving time, splits, routes and calories, so a modified app cannot invent a record.
+
+## How background tracking works
+
+1. When a run starts, the app registers an OS-level **location task** (`expo-location` + `expo-task-manager`). On Android it runs as a **foreground service** with a persistent notification; on iOS it uses background location updates and the blue status-bar indicator.
+2. Fixes are delivered by **distance (about every 8 m)**, not by time, so a standing runner produces nothing and the battery lasts.
+3. Every fix is written to **SQLite immediately** from the task itself, which touches no screen state, so it keeps working when the UI is gone. Running totals (distance, moving time) live in the same row and are updated in one transaction.
+4. Fixes are filtered as they arrive: accuracy worse than 30 m and jumps faster than 12 m/s are dropped; time spent standing still is not counted as moving time; pauses start a new segment so nothing is measured across them.
+5. On stop, the raw points are uploaded in one request with a phone-generated id (retries can never duplicate a run). If offline, the run waits in the local queue and uploads later.
+6. If the app is killed mid-run, the next start finds the unfinished run and offers **Resume** or **Save what we have**.
+
+**Trade-offs and limits.** Background location needs a development or release build (not Expo Go). Some Android brands kill background apps unless battery optimisation is turned off for Asta. Accuracy depends on the phone's GPS and the sky view; poor fixes are dropped rather than guessed. The server re-checks everything, so the app's own numbers are only a live preview.
+
+## Run it
+
+See [`docs/SETUP.md`](docs/SETUP.md) for the full guide (database, API, app, Render, Google sign-in). In short:
 
 ```bash
-npx expo lint
-npx tsc --noEmit
+cd server && npm install && cp .env.example .env   # add DATABASE_URL and JWT_SECRET
+npm run migrate && npm run seed:foods && npm run dev
+cd .. && npm install && cp .env.example .env.local   # add EXPO_PUBLIC_API_URL
+npx expo start --go                                  # quick preview on a phone
+```
+
+Building installable apps (Android APK, iPhone TestFlight): [`docs/RELEASE.md`](docs/RELEASE.md). Manual test plan for both platforms: [`docs/QA.md`](docs/QA.md).
+
+## Quality
+
+- **205 server tests** run against a real Postgres engine in-process (no Docker): API behaviour, authentication, privacy rules, challenge scoring at its boundaries, WebSocket delivery and push.
+- **64 app unit tests** for the run maths, food maths, history and challenge helpers.
+- Strict TypeScript, ESLint and Prettier on both sides: `npx tsc --noEmit && npx expo lint`, and `cd server && npm run typecheck`.
+
+## Roadmap
+
+Not in this version, and the natural next steps:
+
+- **Barcode scanning** for packaged foods (Open Food Facts).
+- **Apple Health / Health Connect** sync for runs and calories.
+- **Offline-first sync** beyond the run upload queue (food log and challenges while offline).
+- **A social feed** of friends' runs with reactions.
+- Email verification, password reset, an Arabic translation (the strings are already centralised) and a challenge edit screen.
+
+## Project layout
+
+```
+src/            app: routes (src/app), screens by feature (src/features), shared UI, theme tokens
+server/         Express API, migrations, tests, seed data
+docs/           setup, release and QA guides, design reference
+claude-code-prompts.md   the phased build plan this project followed
 ```

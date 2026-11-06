@@ -19,6 +19,7 @@ import {
   type ApiUser,
   type AuthTokens,
 } from '@/lib/api';
+import { unregisterPush } from '@/features/notifications/push';
 import { env } from '@/lib/env';
 import { t, type StringKey } from '@/lib/i18n';
 import { queryClient } from '@/lib/queryClient';
@@ -134,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [startSession]);
 
   const signOut = useCallback(async () => {
+    await unregisterPush(); // while still signed in, so the server accepts the request
     const refreshToken = await tokenStore.getRefresh();
     // Best effort: even if the server is unreachable the device is signed out locally.
     if (refreshToken) await apiPublic('/auth/logout', { refreshToken }).catch(() => undefined);

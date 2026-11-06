@@ -6,6 +6,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { useProfile } from '@/features/auth/useProfile';
 import { useIncomingCount } from '@/features/friends/hooks';
 import { friendsHref } from '@/features/friends/routes';
+import { notificationSettingsHref } from '@/features/notifications/routes';
 import { t } from '@/lib/i18n';
 import { spacing } from '@/theme';
 
@@ -35,6 +36,11 @@ export default function Profile() {
           title={t('friends.title')}
           value={incoming > 0 ? String(incoming) : undefined}
           onPress={() => router.push(friendsHref)}
+        />
+        <ListRow
+          icon="notifications-outline"
+          title={t('profile.notifications')}
+          onPress={() => router.push(notificationSettingsHref)}
         />
         {__DEV__ ? (
           <ListRow

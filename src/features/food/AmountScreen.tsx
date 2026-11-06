@@ -18,6 +18,7 @@ import {
   Text,
 } from '@/components';
 import { ApiError } from '@/lib/api';
+import { successHaptic } from '@/lib/haptics';
 import { t } from '@/lib/i18n';
 import { spacing } from '@/theme';
 
@@ -70,6 +71,7 @@ export function AmountScreen() {
     setSubmitted(true);
     if (!valid) return;
     // Fire and navigate: the Food screen updates instantly from the optimistic cache.
+    successHaptic();
     log.mutate({ food, grams, log_date: params.date, meal_type: meal });
     router.dismissTo('/food');
   }

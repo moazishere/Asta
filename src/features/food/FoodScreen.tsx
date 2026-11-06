@@ -7,7 +7,7 @@ import { useDay } from './hooks';
 import { groupByMeal, pickName, todayIn } from './nutrition';
 import { addFoodHref, entryHref } from './routes';
 import type { LogEntry } from './types';
-import { ErrorView, LoadingView, Screen, Text } from '@/components';
+import { ErrorView, Screen, SkeletonList, Text } from '@/components';
 import { useProfile } from '@/features/auth/useProfile';
 import { t } from '@/lib/i18n';
 import { spacing } from '@/theme';
@@ -32,7 +32,7 @@ export function FoodScreen() {
         <DateSwitcher date={date} today={today} onChange={setSelected} />
 
         {query.isPending ? (
-          <LoadingView />
+          <SkeletonList count={4} height={96} />
         ) : query.isError ? (
           <ErrorView message={t('food.loadError')} onRetry={() => void query.refetch()} />
         ) : (

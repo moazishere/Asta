@@ -8,9 +8,10 @@ import { HttpError, isUniqueViolation } from '../errors.js';
 import { USERNAME_PATTERN } from '../lib/invitePage.js';
 import { getWeekAnchor } from '../lib/weekAnchor.js';
 import { currentUserId } from '../middleware/auth.js';
+import { displayNameOf, pushToUser, type PushSender } from '../push.js';
 import type { Hub } from '../realtime.js';
 
-type Deps = { db: Db; hub: Hub; config: Config };
+type Deps = { db: Db; hub: Hub; config: Config; push: PushSender };
 
 type Relationship = {
   friendship_id: string;
@@ -44,7 +45,7 @@ async function relationshipWith(q: Queryable, userId: string): Promise<Relations
   return r.rows[0];
 }
 
-export function friendsRouter({ db, hub, config }: Deps) {
+export function friendsRouter({ db, hub, config, push }: Deps) {
   const router = Router();
 
   if (config.rateLimit) {
@@ -196,6 +197,14 @@ export function friendsRouter({ db, hub, config }: Deps) {
       });
 
       notify(me, result.target.id);
+      if (result.status === 'pending') {
+        const name = await displayNameOf(db, me);
+        await pushToUser(db, push, result.target.id, 'friend_requests', {
+          title: 'New friend request',
+          body: `${name} wants to be your friend.`,
+          data: { type: 'friend_request' },
+        });
+      }
       res
         .status(201)
         .json({ status: result.status, friendship_id: result.friendship_id, user: result.target });

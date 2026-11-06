@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from './Text';
+import { selectionHaptic } from '@/lib/haptics';
 import { colors, radii, spacing } from '@/theme';
 
 type Props<T extends string> = {
@@ -20,7 +21,10 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
             key={o.value}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
-            onPress={() => onChange(o.value)}
+            onPress={() => {
+              if (!selected) selectionHaptic();
+              onChange(o.value);
+            }}
             style={[styles.item, selected && styles.selected]}
           >
             <Text variant="bodyStrong" color={selected ? 'onAccent' : 'textMuted'}>

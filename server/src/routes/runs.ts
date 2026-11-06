@@ -15,6 +15,8 @@ import {
 import { computeSplits } from '../lib/splits.js';
 import { notifyUserChallenges } from '../lib/challengeEvents.js';
 import { currentUserId } from '../middleware/auth.js';
+import { notifyOvertaken, snapshotBoards } from '../lib/rankWatch.js';
+import type { PushSender } from '../push.js';
 import type { Hub } from '../realtime.js';
 
 const MAX_POINTS = 50_000;
@@ -69,7 +71,7 @@ type RunRow = {
 type RunListRow = RunRow & { route_polyline: string | null; cursor_t: string };
 const RUN_COLUMNS = `id, started_at, ended_at, distance_m, moving_time_s, avg_pace_s_per_km, kcal_est, suspicious`;
 
-export function runsRouter({ db, hub }: { db: Db; hub: Hub }) {
+export function runsRouter({ db, hub, push }: { db: Db; hub: Hub; push: PushSender }) {
   const router = Router();
 
   router.post('/', async (req, res) => {
@@ -105,6 +107,8 @@ export function runsRouter({ db, hub }: { db: Db; hub: Hub }) {
     const publicRoute =
       publicPoints.length >= 2 ? encodePolyline(simplify(publicPoints, SIMPLIFY_EPSILON_M)) : null;
 
+    // Leaderboard order before this run, so people the runner overtakes can be told.
+    const boardsBefore = await snapshotBoards(db, userId);
     const result = await db.asUser(userId, async (q) => {
       const profile = await q.query<{ weight_kg: number | null }>(`select weight_kg from profiles`);
       // Rough rule of thumb for running: about 1 kcal per kg of body weight per km. An estimate.
@@ -161,7 +165,10 @@ export function runsRouter({ db, hub }: { db: Db; hub: Hub }) {
     });
 
     // A new run can change the score of anyone in this runner's active challenges: refresh their boards.
-    if (result.created) await notifyUserChallenges(db, hub, userId);
+    if (result.created) {
+      await notifyUserChallenges(db, hub, userId);
+      await notifyOvertaken(db, push, userId, boardsBefore);
+    }
     res.status(result.created ? 201 : 200).json(result.run);
   });
 

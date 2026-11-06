@@ -6,7 +6,14 @@ import { useRunsInfinite } from './hooks';
 import { runHref } from './routes';
 import { RunListItem } from './RunListItem';
 import type { RunSummary } from './types';
-import { EmptyView, ErrorView, LoadingView, Screen, ScreenHeader } from '@/components';
+import {
+  EmptyView,
+  ErrorView,
+  LoadingView,
+  Screen,
+  ScreenHeader,
+  SkeletonList,
+} from '@/components';
 import { useProfile } from '@/features/auth/useProfile';
 import { t } from '@/lib/i18n';
 import { spacing } from '@/theme';
@@ -33,7 +40,7 @@ export function RunsScreen() {
 
   let body;
   if (query.isPending) {
-    body = <LoadingView />;
+    body = <SkeletonList count={5} height={88} />;
   } else if (query.isError && runs.length === 0) {
     body = <ErrorView message={t('history.error')} onRetry={() => void query.refetch()} />;
   } else if (runs.length === 0) {

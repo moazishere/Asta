@@ -1,12 +1,12 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 
 import { macrosForGrams, scaleMacros, sumTotals } from './nutrition';
 import type { DayLog, Food, LogEntry, MealType } from './types';
 import { apiFetch } from '@/lib/api';
 import { t } from '@/lib/i18n';
+import { showToast } from '@/lib/toast';
 
 export const dayKey = (date: string) => ['food', 'day', date] as const;
 const entryKey = (id: string) => ['food', 'entry', id] as const;
@@ -80,7 +80,7 @@ const withEntries = (day: DayLog, entries: LogEntry[]): DayLog => ({
   totals: sumTotals(entries),
 });
 
-const failed = () => Alert.alert(t('food.saveError'));
+const failed = () => showToast(t('food.saveError'), 'error');
 
 export type LogInput = { log_date: string; meal_type: MealType } & (
   { food: Food; grams: number } | { custom_name: string; kcal: number }

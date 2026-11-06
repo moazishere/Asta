@@ -28,6 +28,7 @@ import {
 import { personName } from '@/features/friends/hooks';
 import { ApiError } from '@/lib/api';
 import { t } from '@/lib/i18n';
+import { showToast } from '@/lib/toast';
 import { sizes, spacing } from '@/theme';
 
 export function ChallengeDetailScreen() {
@@ -102,7 +103,7 @@ export function ChallengeDetailScreen() {
         onSuccess: (result) => {
           setPicking(false);
           setPicked([]);
-          Alert.alert(t('challenges.inviteSent', { count: result.invited }));
+          showToast(t('challenges.inviteSent', { count: result.invited }), 'success');
         },
       },
     );

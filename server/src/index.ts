@@ -4,18 +4,20 @@ import { createApp } from './app.js';
 import { loadConfig } from './config.js';
 import { createPgDb } from './db.js';
 import { createGoogleClient } from './lib/google.js';
+import { createExpoPushSender } from './push.js';
 import { createHub } from './realtime.js';
 import { startScheduler } from './scheduler.js';
 
 const config = loadConfig(process.env);
 const db = createPgDb({ url: config.databaseUrl, ssl: config.databaseSsl });
 const hub = createHub(config);
-const app = createApp({ db, config, google: createGoogleClient(config), hub });
+const push = createExpoPushSender();
+const app = createApp({ db, config, google: createGoogleClient(config), hub, push });
 
 // An explicit http.Server (instead of app.listen) so the WebSocket hub can share the same port.
 const server = createServer(app);
 hub.attach(server);
-const stopScheduler = startScheduler(db, hub);
+const stopScheduler = startScheduler(db, hub, push);
 server.listen(config.port, () => {
   console.log(`asta-server listening on :${config.port}`);
 });

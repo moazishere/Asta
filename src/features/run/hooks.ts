@@ -4,18 +4,22 @@ import { elapsedMs } from './geo';
 import { refreshLive } from './runController';
 import { useRunStore } from './runStore';
 
-/** Once per second while a run is active or paused: refreshes the store from the database. */
-export function useRunTicker(): number {
+/**
+ * Once per second while a run is active or paused: refreshes the store from the database.
+ * @param enabled false while the Run screen is not visible: the run itself keeps recording into the
+ * database, and there is nothing to redraw (or battery to spend) until the user comes back.
+ */
+export function useRunTicker(enabled = true): number {
   const phase = useRunStore((s) => s.phase);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (phase === 'idle') return;
+    if (phase === 'idle' || !enabled) return;
     const id = setInterval(() => {
       setNow(Date.now());
       void refreshLive();
     }, 1000);
     return () => clearInterval(id);
-  }, [phase]);
+  }, [phase, enabled]);
   return now;
 }
 

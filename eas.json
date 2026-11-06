@@ -4,12 +4,19 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": { "buildType": "apk" },
+      "ios": { "simulator": false }
     },
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": { "buildType": "apk" },
+      "env": { "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-YOUR-RENDER-URL.onrender.com" }
     },
-    "production": { "autoIncrement": true }
-  }
+    "production": {
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" },
+      "env": { "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-YOUR-RENDER-URL.onrender.com" }
+    }
+  },
+  "submit": { "production": {} }
 }

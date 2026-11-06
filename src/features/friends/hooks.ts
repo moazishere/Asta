@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert } from 'react-native';
 
 import type { FriendProfile, FriendsOverview, LookupResult, PersonCard } from './types';
 import { ApiError, apiFetch } from '@/lib/api';
+import { errorHaptic, successHaptic } from '@/lib/haptics';
 import { t, type StringKey } from '@/lib/i18n';
+import { showToast } from '@/lib/toast';
 
 export const personName = (p: Pick<PersonCard, 'display_name' | 'username'>) =>
   p.display_name || p.username;
@@ -66,8 +67,14 @@ function useFriendAction<TVars>(fn: (vars: TVars) => Promise<unknown>) {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: fn,
-    onSuccess: invalidate,
-    onError: (err) => Alert.alert(friendsErrorMessage(err)),
+    onSuccess: () => {
+      successHaptic();
+      invalidate();
+    },
+    onError: (err) => {
+      errorHaptic();
+      showToast(friendsErrorMessage(err), 'error');
+    },
   });
 }
 

@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet } from 'react-native';
 
 import { Text } from './Text';
+import { selectionHaptic } from '@/lib/haptics';
 import { colors, radii, spacing } from '@/theme';
 
 type Props = { label: string; onPress: () => void; selected?: boolean };
@@ -11,7 +12,10 @@ export function Chip({ label, onPress, selected = false }: Props) {
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      onPress={onPress}
+      onPress={() => {
+        selectionHaptic();
+        onPress();
+      }}
       style={[styles.chip, selected && styles.selected]}
     >
       <Text variant="bodyStrong" color={selected ? 'onAccent' : 'text'}>

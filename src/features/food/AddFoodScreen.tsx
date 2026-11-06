@@ -21,6 +21,7 @@ import {
   Text,
 } from '@/components';
 import { ApiError } from '@/lib/api';
+import { successHaptic } from '@/lib/haptics';
 import { t } from '@/lib/i18n';
 import { spacing } from '@/theme';
 
@@ -273,6 +274,7 @@ function QuickAddForm({ date, initialMeal }: { date: string; initialMeal: MealTy
     setSubmitted(true);
     if (nameError || kcalError) return;
     // Fire and navigate: the day screen updates instantly from the optimistic cache.
+    successHaptic();
     log.mutate({ log_date: date, meal_type: meal, custom_name: name.trim(), kcal: k });
     router.dismissTo('/food');
   }

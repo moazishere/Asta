@@ -8,5 +8,12 @@ export type TextProps = RNTextProps & {
 };
 
 export function Text({ variant = 'body', color = 'text', style, ...rest }: TextProps) {
-  return <RNText {...rest} style={[typography[variant], { color: colors[color] }, style]} />;
+  // Large system font sizes are honoured up to 1.3x; beyond that stat rows and tab labels would overflow.
+  return (
+    <RNText
+      maxFontSizeMultiplier={1.3}
+      {...rest}
+      style={[typography[variant], { color: colors[color] }, style]}
+    />
+  );
 }

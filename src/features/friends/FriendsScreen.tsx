@@ -26,6 +26,7 @@ import {
   LoadingView,
   Screen,
   ScreenHeader,
+  SkeletonList,
   Text,
 } from '@/components';
 import { useProfile } from '@/features/auth/useProfile';
@@ -76,7 +77,7 @@ export function FriendsScreen() {
         ) : null}
 
         {query.isPending ? (
-          <LoadingView />
+          <SkeletonList count={3} height={72} />
         ) : query.isError ? (
           <ErrorView message={t('friends.loadError')} onRetry={() => void query.refetch()} />
         ) : (

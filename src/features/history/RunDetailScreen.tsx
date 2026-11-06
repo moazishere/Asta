@@ -23,6 +23,7 @@ import { formatDuration, formatKm, formatPace } from '@/features/run/geo';
 import { RunMap } from '@/features/run/RunMap';
 import { ApiError } from '@/lib/api';
 import { t } from '@/lib/i18n';
+import { showToast } from '@/lib/toast';
 import { radii, sizes, spacing } from '@/theme';
 
 export function RunDetailScreen() {
@@ -52,7 +53,7 @@ export function RunDetailScreen() {
         onPress: () =>
           remove.mutate(id, {
             onSuccess: back,
-            onError: () => Alert.alert(t('detail.deleteError')),
+            onError: () => showToast(t('detail.deleteError'), 'error'),
           }),
       },
     ]);

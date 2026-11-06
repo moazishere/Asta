@@ -8,10 +8,11 @@ import { HttpError } from '../errors.js';
 import { notifyChallenge } from '../lib/challengeEvents.js';
 import { validateChallenge, type ChallengeType } from '../lib/challengeRules.js';
 import { currentUserId } from '../middleware/auth.js';
+import { displayNameOf, pushToUser, type PushSender } from '../push.js';
 import type { Hub } from '../realtime.js';
 import { tickChallenges } from '../scheduler.js';
 
-type Deps = { db: Db; hub: Hub };
+type Deps = { db: Db; hub: Hub; push: PushSender };
 
 const idParam = z.object({ id: z.string().uuid() });
 const type = z.enum(['distance', 'run_count', 'kcal_streak']);
@@ -84,7 +85,27 @@ async function cardFor(q: Queryable, userId: string | null): Promise<Card | null
   return r.rows[0] ?? null;
 }
 
-export function challengesRouter({ db, hub }: Deps) {
+export function challengesRouter({ db, hub, push }: Deps) {
+  /** Tells newly invited friends, if they have invitations switched on. */
+  async function pushInvites(
+    inviter: string,
+    challengeId: string,
+    title: string,
+    invitedIds: string[],
+  ) {
+    if (invitedIds.length === 0) return;
+    const name = await displayNameOf(db, inviter);
+    await Promise.all(
+      invitedIds.map((uid) =>
+        pushToUser(db, push, uid, 'challenge_invites', {
+          title: 'Challenge invitation',
+          body: `${name} invited you to ${title}.`,
+          data: { type: 'challenge', id: challengeId },
+        }),
+      ),
+    );
+  }
+
   const router = Router();
 
   // ---- list ------------------------------------------------------------------------------------
@@ -257,8 +278,9 @@ export function challengesRouter({ db, hub }: Deps) {
     });
 
     // A challenge that starts right now should not wait for the next scheduler tick.
-    if (Date.parse(body.starts_at) <= Date.now()) await tickChallenges(db, hub);
+    if (Date.parse(body.starts_at) <= Date.now()) await tickChallenges(db, hub, push);
     await notifyChallenge(db, hub, created.id, [me, ...created.invited]);
+    await pushInvites(me, created.id, body.title, created.invited);
 
     const detail = await db.asUser(me, (q) => loadMine(q, created.id));
     res.status(201).json({
@@ -358,9 +380,10 @@ export function challengesRouter({ db, hub }: Deps) {
         );
         if (ins.rows.length) invited.push(friend);
       }
-      return { invited, rejected: user_ids.filter((u) => !friends.includes(u)) };
+      return { invited, title: cur.title, rejected: user_ids.filter((u) => !friends.includes(u)) };
     });
     await notifyChallenge(db, hub, id, result.invited);
+    await pushInvites(me, id, result.title, result.invited);
     res.json({ invited: result.invited.length, rejected: result.rejected });
   });
 

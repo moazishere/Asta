@@ -1,7 +1,8 @@
 import type { ExpoConfig } from 'expo/config';
 
-// TODO(before first release): replace the placeholder identifiers below.
-const BUNDLE_ID = 'com.example.asta';
+// Set APP_ID (an EAS environment variable) to your own reverse-domain id before the first store build,
+// e.g. com.yourname.asta. It cannot be changed once the app is published.
+const BUNDLE_ID = process.env.APP_ID ?? 'com.example.asta';
 
 const config: ExpoConfig = {
   name: 'Asta',
@@ -64,8 +65,10 @@ const config: ExpoConfig = {
     ],
     'expo-secure-store',
     'expo-sqlite',
-    'expo-notifications',
+    ['expo-notifications', { color: '#DDF247' }],
   ],
+  // Created by `npx eas-cli init`; needed for push notifications. Set it as the EAS_PROJECT_ID variable.
+  extra: { eas: { projectId: process.env.EAS_PROJECT_ID } },
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
